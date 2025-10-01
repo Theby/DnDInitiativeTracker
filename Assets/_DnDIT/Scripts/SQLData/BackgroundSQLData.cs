@@ -8,10 +8,9 @@ namespace DnDInitiativeTracker.SQLData
         int Id,
         bool Enabled,
         long InputDate,
-        [property: Column("backgroundAssetId")]
-        int BackgroundAssetId) : SQLiteData(Id, Enabled, InputDate)
+        [property: Column("mediaAssetId")] int MediaAssetId) : SQLiteData(Id, Enabled, InputDate)
     {
-        public BackgroundSQLData() : this(0, true, DateTime.Now.Ticks, -1)
+        public BackgroundSQLData() : this(0, true, DateTime.Now.Ticks, 0)
         {
         }
     }

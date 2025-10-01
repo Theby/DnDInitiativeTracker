@@ -10,7 +10,7 @@ namespace DnDInitiativeTracker.SQLData
         long InputDate,
         [property: Column("backgroundId")] int BackgroundId) : SQLiteData(Id, Enabled, InputDate)
     {
-        public CurrentConfigurationSQLData() : this(0, true, DateTime.Now.Ticks, -1)
+        public CurrentConfigurationSQLData() : this(0, true, DateTime.Now.Ticks, 0)
         {
         }
     }

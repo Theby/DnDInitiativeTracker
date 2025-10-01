@@ -19,7 +19,7 @@ namespace DnDInitiativeTracker.Controller
             _dataBasePath = Path.Combine(Application.persistentDataPath, "DnDIT.db");
             _dataBase = new SQLiteConnection(_dataBasePath);
 
-            _dataBase.CreateTable<AssetDirectorySQLData>();
+            _dataBase.CreateTable<MediaAssetSQLData>();
             _dataBase.CreateTable<CharacterSQLData>();
             _dataBase.CreateTable<BackgroundSQLData>();
             _dataBase.CreateTable<CurrentConfigurationSQLData>();

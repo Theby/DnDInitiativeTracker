@@ -4,13 +4,14 @@ using SQLite;
 namespace DnDInitiativeTracker.SQLData
 {
     [Table("AssetDirectory")]
-    public record AssetDirectorySQLData(
+    public record MediaAssetSQLData(
         int Id,
         bool Enabled,
         long InputDate,
+        [property: Column("type")] string Type,
         [property: Column("path")] string Path) : SQLiteData(Id, Enabled, InputDate)
     {
-        public AssetDirectorySQLData() : this(0, true, DateTime.Now.Ticks, string.Empty)
+        public MediaAssetSQLData() : this(0, true, DateTime.Now.Ticks, string.Empty, string.Empty)
         {
         }
     }
