@@ -1,3 +1,5 @@
+using System.Collections;
+using DnDInitiativeTracker.Controller;
 using UnityEngine;
 
 namespace DnDInitiativeTracker.Manager
@@ -14,6 +16,11 @@ namespace DnDInitiativeTracker.Manager
         {
             DnDITManager = dndITManager;
             CanvasManager = canvasManager;
+        }
+
+        IEnumerator Start()
+        {
+            yield return NativeGalleryController.RequestPermissions();
 
             DnDITManager.Initialize();
             CanvasManager.Initialize();

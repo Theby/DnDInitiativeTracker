@@ -14,20 +14,21 @@ namespace DnDInitiativeTracker.Controller
         SQLiteConnection _dataBase;
         string _dataBasePath;
 
-        public void Initialize()
+        public void Initialize(string databaseName)
         {
-            _dataBasePath = Path.Combine(Application.persistentDataPath, "DnDIT.db");
+            var dataBaseFullName = Path.ChangeExtension(databaseName, "db");
+            _dataBasePath = Path.Combine(Application.persistentDataPath, dataBaseFullName);
             _dataBase = new SQLiteConnection(_dataBasePath);
-
-            _dataBase.CreateTable<MediaAssetSQLData>();
-            _dataBase.CreateTable<CharacterSQLData>();
-            _dataBase.CreateTable<BackgroundSQLData>();
-            _dataBase.CreateTable<CurrentConfigurationSQLData>();
         }
 
         public void Clear()
         {
             _dataBase.Close();
+        }
+
+        public void CreateTable<T>() where T : SQLiteData, new()
+        {
+            _dataBase.CreateTable<T>();
         }
 
         public void Insert<T>(T data) where T : SQLiteData, new()

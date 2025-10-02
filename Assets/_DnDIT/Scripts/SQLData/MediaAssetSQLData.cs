@@ -8,10 +8,11 @@ namespace DnDInitiativeTracker.SQLData
         int Id,
         bool Enabled,
         long InputDate,
+        [property: Column("name")] string Name,
         [property: Column("type")] string Type,
         [property: Column("path")] string Path) : SQLiteData(Id, Enabled, InputDate)
     {
-        public MediaAssetSQLData() : this(0, true, DateTime.Now.Ticks, string.Empty, string.Empty)
+        public MediaAssetSQLData() : this(0, true, DateTime.Now.Ticks, string.Empty, string.Empty, string.Empty)
         {
         }
     }

@@ -4,6 +4,7 @@ namespace DnDInitiativeTracker.GameData
 {
     public class MediaAssetData : FromSQLData<MediaAssetSQLData>
     {
+        public string Name { get; set; }
         public string Type { get; set; }
         public string Path { get; set; }
 
@@ -13,6 +14,7 @@ namespace DnDInitiativeTracker.GameData
             if (sqlData == null)
                 return;
 
+            Name = sqlData.Name;
             Type = sqlData.Type;
             Path = sqlData.Path;
         }
@@ -23,6 +25,7 @@ namespace DnDInitiativeTracker.GameData
                 SQLId,
                 Enabled,
                 InputDate,
+                Name,
                 Type,
                 Path
             );

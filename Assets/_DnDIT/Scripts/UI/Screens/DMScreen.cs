@@ -5,12 +5,16 @@ using UnityEngine.UI;
 
 namespace DnDInitiativeTracker.UI
 {
-    public class DMScreen : MonoBehaviour
+    public class DMScreen : CanvasScreen
     {
+        [Header("Background")]
+        [SerializeField] Image backgroundImage;
+        [Header("Scroll")]
         [SerializeField] ScrollRect scrollRect;
         [SerializeField] GameObject scrollContent;
         [SerializeField] CharacterInitiativeLayout characterInitiativeLayoutPrefab;
-        [Header("Buttons")] [SerializeField] Button createButton;
+        [Header("Buttons")]
+        [SerializeField] Button createButton;
         [SerializeField] Button editButton;
         [SerializeField] Button changeBGButton;
         [SerializeField] Button addMoreButton;
@@ -18,18 +22,13 @@ namespace DnDInitiativeTracker.UI
 
         List<CharacterInitiativeLayout> _layoutList = new();
 
-        public void Initialize()
+        public override void Initialize()
         {
             createButton.onClick.AddListener(OnCreateButtonPressedHandler);
             editButton.onClick.AddListener(OnEditButtonPressedHandler);
             changeBGButton.onClick.AddListener(OnChangeBGButtonPressedHandler);
             addMoreButton.onClick.AddListener(OnAddMoreButtonPressedHandler);
             refreshButton.onClick.AddListener(OnRefreshButtonPressedHandler);
-        }
-
-        public void ShowScreen()
-        {
-            //TODO read current state and show it
         }
 
         void AddCharacterInitiativeLayout()
@@ -64,6 +63,11 @@ namespace DnDInitiativeTracker.UI
             }
         }
 
+        void ChangeBG()
+        {
+            //GameManager.DnDITManager.GetImageFromGallery(t => Debug.Log(t.name));
+        }
+
         #region Handlers
 
         void OnCreateButtonPressedHandler()
@@ -78,7 +82,7 @@ namespace DnDInitiativeTracker.UI
 
         void OnChangeBGButtonPressedHandler()
         {
-
+            ChangeBG();
         }
 
         void OnAddMoreButtonPressedHandler()
