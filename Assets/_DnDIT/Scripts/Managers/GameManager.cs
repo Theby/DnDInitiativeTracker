@@ -1,5 +1,8 @@
 using System.Collections;
+using System.Collections.Generic;
 using DnDInitiativeTracker.Controller;
+using DnDInitiativeTracker.GameData;
+using DnDInitiativeTracker.UI;
 using UnityEngine;
 
 namespace DnDInitiativeTracker.Manager
@@ -11,6 +14,9 @@ namespace DnDInitiativeTracker.Manager
 
         public static DnDITManager DnDITManager { get; private set; }
         public static CanvasManager CanvasManager { get; private set; }
+
+        List<CharacterData> _currentCharacters = new List<CharacterData>();
+        BackgroundData _currentBackground;
 
         void Awake()
         {
@@ -24,6 +30,17 @@ namespace DnDInitiativeTracker.Manager
 
             DnDITManager.Initialize();
             CanvasManager.Initialize();
+
+            Test();
+        }
+
+        void Test()
+        {
+            var allCharacters = DnDITManager.GetAllCharacters();
+            var allBackgrounds = DnDITManager.GetAllBackgrounds();
+            var data = new DMScreen.Data(_currentCharacters, allCharacters, _currentBackground, allBackgrounds);
+
+            CanvasManager.ShowDMScreen(data);
         }
     }
 }

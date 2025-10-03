@@ -10,12 +10,14 @@ namespace DnDInitiativeTracker.GameData
         public MediaAssetData AvatarData { get; set; }
         public string Name { get; set; }
         public List<MediaAssetData> AudioDataList { get; set; }
+        public int Initiative { get; set; }
 
         public CharacterData(CharacterSQLData sqlData, MediaAssetData avatarData, List<MediaAssetData> audioDataList)
             : base(sqlData)
         {
             AvatarData = avatarData;
             AudioDataList = audioDataList;
+            Initiative = 0;
 
             if (sqlData == null)
                 return;

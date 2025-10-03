@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace DnDInitiativeTracker.UI
 {
-    public abstract class CanvasScreen : MonoBehaviour
+    public abstract class Panel : MonoBehaviour
     {
         public virtual void Show()
         {

@@ -137,10 +137,10 @@ namespace DnDInitiativeTracker.Manager
             return background;
         }
 
-        public List<BackgroundData> GetAllBackgrounds()
+        public Dictionary<string, BackgroundData> GetAllBackgrounds()
         {
             var data = _sqlController.GetAll<BackgroundSQLData>();
-            return data.Select(CreateBackgroundData).ToList();
+            return data.Select(CreateBackgroundData).ToDictionary(bg => bg.MediaAssetData.Name);
         }
 
         BackgroundData CreateBackgroundData(BackgroundSQLData sqlData)

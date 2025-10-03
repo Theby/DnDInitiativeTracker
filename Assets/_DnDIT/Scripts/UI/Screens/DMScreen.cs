@@ -1,14 +1,17 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using DnDInitiativeTracker.Controller;
+using DnDInitiativeTracker.GameData;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace DnDInitiativeTracker.UI
 {
-    public class DMScreen : CanvasScreen
+    public class DMScreen : Panel
     {
         [Header("Background")]
-        [SerializeField] Image backgroundImage;
+        [SerializeField] RawImage backgroundImage;
         [Header("Scroll")]
         [SerializeField] ScrollRect scrollRect;
         [SerializeField] GameObject scrollContent;
@@ -19,8 +22,17 @@ namespace DnDInitiativeTracker.UI
         [SerializeField] Button changeBGButton;
         [SerializeField] Button addMoreButton;
         [SerializeField] Button refreshButton;
+        [Header("Popups")]
+        [SerializeField] ChangeBGPopup changeBGPopup;
 
+        Data _data;
         List<CharacterInitiativeLayout> _layoutList = new();
+
+        public record Data(
+            List<CharacterData> CurrentCharacters,
+            Dictionary<string, CharacterData> AllCharacters,
+            BackgroundData CurrentBackground,
+            Dictionary<string, BackgroundData> AllBackgrounds);
 
         public override void Initialize()
         {
@@ -29,16 +41,40 @@ namespace DnDInitiativeTracker.UI
             changeBGButton.onClick.AddListener(OnChangeBGButtonPressedHandler);
             addMoreButton.onClick.AddListener(OnAddMoreButtonPressedHandler);
             refreshButton.onClick.AddListener(OnRefreshButtonPressedHandler);
+            
+            changeBGPopup.Hide();
+            changeBGPopup.Initialize();
+            changeBGPopup.OnAddNewBackground += OnAddNewBackgroundHandler;
+        }
+
+        public void SetData(Data data)
+        {
+            _data = data;
+
+            _layoutList.Clear();
+            foreach (var characterData in _data.CurrentCharacters)
+            {
+                InstantiateCharacterInitiativeLayout(characterData);
+            }
+            RefreshCharacterInitiativeLayoutList();
+        }
+
+        void InstantiateCharacterInitiativeLayout(CharacterData characterData)
+        {
+            var characterInitiativeLayout = Instantiate(characterInitiativeLayoutPrefab, scrollContent.transform);
+
+            var positionIndex = _layoutList.Count + 1;
+            var nameList = _data.AllCharacters.Keys.ToList();
+            characterInitiativeLayout.Initialize(positionIndex);
+            characterInitiativeLayout.SetData(characterData, nameList);
+            characterInitiativeLayout.OnRemove += OnRemoveLayoutHandler;
+
+            _layoutList.Add(characterInitiativeLayout);
         }
 
         void AddCharacterInitiativeLayout()
         {
-            var characterInitiativeLayout = Instantiate(characterInitiativeLayoutPrefab, scrollContent.transform);
-            _layoutList.Add(characterInitiativeLayout);
-
-            var positionIndex = _layoutList.Count;
-            characterInitiativeLayout.Initialize(positionIndex);
-            characterInitiativeLayout.OnRemove += OnRemoveLayoutHandler;
+            InstantiateCharacterInitiativeLayout(null);
         }
 
         void RemoveCharacterInitiativeLayout(int positionIndex)
@@ -63,11 +99,6 @@ namespace DnDInitiativeTracker.UI
             }
         }
 
-        void ChangeBG()
-        {
-            //GameManager.DnDITManager.GetImageFromGallery(t => Debug.Log(t.name));
-        }
-
         #region Handlers
 
         void OnCreateButtonPressedHandler()
@@ -82,7 +113,20 @@ namespace DnDInitiativeTracker.UI
 
         void OnChangeBGButtonPressedHandler()
         {
-            ChangeBG();
+            var nameList = _data.AllBackgrounds.Keys.ToList();
+
+            changeBGPopup.Show();
+            changeBGPopup.SetData(_data.CurrentBackground, nameList);
+        }
+
+        void OnAddNewBackgroundHandler()
+        {
+            NativeGalleryController.GetImageFromGallery(OnNewBackgroundHandler);
+        }
+
+        void OnNewBackgroundHandler(Texture2D texture2D)
+        {
+            backgroundImage.texture = texture2D;
         }
 
         void OnAddMoreButtonPressedHandler()

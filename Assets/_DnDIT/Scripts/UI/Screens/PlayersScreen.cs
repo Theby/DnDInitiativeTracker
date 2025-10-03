@@ -1,6 +1,6 @@
 namespace DnDInitiativeTracker.UI
 {
-    public class PlayersScreen : CanvasScreen
+    public class PlayersScreen : Panel
     {
         public override void Initialize()
         {
