@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using DnDInitiativeTracker.GameData;
-using DnDInitiativeTracker.UI;
 using UnityEngine;
 
 namespace DnDInitiativeTracker.Manager
@@ -8,37 +5,16 @@ namespace DnDInitiativeTracker.Manager
     public class CanvasManager : MonoBehaviour
     {
         [Header("Screens")]
-        [SerializeField] PlayersScreen playersScreen;
-        [SerializeField] DMScreen dmScreen;
-
-        void Awake()
-        {
-            HidePanels();
-        }
+        [SerializeField] DMScreenManager dmScreenManager;
 
         public void Initialize()
         {
-            playersScreen.Initialize();
-
-            dmScreen.Initialize();
+            dmScreenManager.Initialize();
         }
 
-        void HidePanels()
+        public void ShowDMScreen()
         {
-            playersScreen.Hide();
-            dmScreen.Hide();
-        }
-
-        public void ShowPlayerScreen()
-        {
-
-        }
-
-        public void ShowDMScreen(DMScreen.Data data)
-        {
-            HidePanels();
-            dmScreen.Show();
-            dmScreen.SetData(data);
+            dmScreenManager.Show();
         }
     }
 }

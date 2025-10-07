@@ -6,6 +6,8 @@ namespace DnDInitiativeTracker.GameData
     {
         public MediaAssetData MediaAssetData { get; set; }
 
+        public BackgroundData() { }
+
         public BackgroundData(BackgroundSQLData sqlData, MediaAssetData mediaAssetData)
             : base(sqlData)
         {

@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using DnDInitiativeTracker.GameData;
+using DnDInitiativeTracker.UIData;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -41,7 +41,7 @@ namespace DnDInitiativeTracker.UI
             removeButton.onClick.AddListener(OnRemoveButtonPressedHandler);
         }
 
-        public void SetData(CharacterData data, List<string> characterNames)
+        public void SetData(CharacterUIData data, List<string> characterNames)
         {
             characterDropdown.AddOptions(characterNames);
 

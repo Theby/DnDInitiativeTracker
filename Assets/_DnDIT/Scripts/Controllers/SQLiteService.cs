@@ -7,9 +7,9 @@ using DnDInitiativeTracker.SQLData;
 using SQLite;
 using UnityEngine;
 
-namespace DnDInitiativeTracker.Controller
+namespace DnDInitiativeTracker.Service
 {
-    public class SQLController
+    public class SQLiteService
     {
         SQLiteConnection _dataBase;
         string _dataBasePath;

@@ -1,8 +1,8 @@
-using System;
 using System.Collections.Generic;
-using DnDInitiativeTracker.GameData;
+using DnDInitiativeTracker.UIData;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace DnDInitiativeTracker.UI
@@ -12,26 +12,25 @@ namespace DnDInitiativeTracker.UI
         [SerializeField] Button closeButton;
         [SerializeField] TMP_Dropdown nameDropdown;
         [SerializeField] Button addNewButton;
-
-        public event Action OnAddNewBackground;
+        [Header("Events")]
+        [SerializeField] UnityEvent onClose;
+        [SerializeField] UnityEvent<int> onSelectionChanged;
+        [SerializeField] UnityEvent onAddNew;
 
         public override void Initialize()
         {
-            closeButton.onClick.AddListener(Hide);
-            addNewButton.onClick.AddListener(OnAddNewBackgroundHandler);
+            closeButton.onClick.AddListener(onClose.Invoke);
+            nameDropdown.onValueChanged.AddListener(onSelectionChanged.Invoke);
+            addNewButton.onClick.AddListener(onAddNew.Invoke);
         }
 
-        public void SetData(BackgroundData data, List<string> backgroundNames)
+        public void SetData(string currentName, List<string> backgroundNames)
         {
+            nameDropdown.ClearOptions();
             nameDropdown.AddOptions(backgroundNames);
 
-            var dropDownIndex = data == null ? 0 : nameDropdown.options.FindIndex(x => x.text == data.MediaAssetData.Name);
+            var dropDownIndex = nameDropdown.options.FindIndex(x => x.text == currentName);
             nameDropdown.value = dropDownIndex;
-        }
-
-        void OnAddNewBackgroundHandler()
-        {
-            OnAddNewBackground?.Invoke();
         }
     }
 }

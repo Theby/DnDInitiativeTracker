@@ -1,3 +1,4 @@
+using System;
 using DnDInitiativeTracker.SQLData;
 
 namespace DnDInitiativeTracker.GameData
@@ -5,8 +6,10 @@ namespace DnDInitiativeTracker.GameData
     public class MediaAssetData : FromSQLData<MediaAssetSQLData>
     {
         public string Name { get; set; }
-        public string Type { get; set; }
+        public NativeGallery.MediaType Type { get; set; }
         public string Path { get; set; }
+
+        public MediaAssetData() { }
 
         public MediaAssetData(MediaAssetSQLData sqlData)
             : base(sqlData)
@@ -14,8 +17,10 @@ namespace DnDInitiativeTracker.GameData
             if (sqlData == null)
                 return;
 
+            var type = (NativeGallery.MediaType)Enum.Parse(typeof(NativeGallery.MediaType), sqlData.Type, true);
+
             Name = sqlData.Name;
-            Type = sqlData.Type;
+            Type = type;
             Path = sqlData.Path;
         }
 
@@ -26,7 +31,7 @@ namespace DnDInitiativeTracker.GameData
                 Enabled,
                 InputDate,
                 Name,
-                Type,
+                Type.ToString(),
                 Path
             );
         }

@@ -631,7 +631,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 421488920}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 993586434}
+        m_TargetAssemblyTypeName: DMScreenManager, Assembly-CSharp
+        m_MethodName: EditCharacterButtonInspectorHandler
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &421488920
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1351,7 +1363,6 @@ MonoBehaviour:
   m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
   m_RequiresDepthTexture: 0
   m_RequiresColorTexture: 0
-  m_Version: 2
   m_TaaSettings:
     m_Quality: 3
     m_FrameInfluence: 0.1
@@ -1359,6 +1370,7 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
+  m_Version: 2
 --- !u!1 &597865655
 GameObject:
   m_ObjectHideFlags: 0
@@ -1712,6 +1724,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 737639088}
+  - component: {fileID: 737639089}
   m_Layer: 5
   m_Name: ChangeBGPopup
   m_TagString: Untagged
@@ -1740,6 +1753,66 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &737639089
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 737639087}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ac155739ebcc4349a40a1b35bce3578, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DnDInitiativeTracker.UI.ChangeBGPopup
+  closeButton: {fileID: 597865657}
+  nameDropdown: {fileID: 403662864}
+  addNewButton: {fileID: 1932891370}
+  onClose:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 737639089}
+        m_TargetAssemblyTypeName: DnDInitiativeTracker.UI.ChangeBGPopup, Assembly-CSharp
+        m_MethodName: Hide
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  onSelectionChanged:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 993586434}
+        m_TargetAssemblyTypeName: DMScreenManager, Assembly-CSharp
+        m_MethodName: BackgroundSelectionDropdownInspectorHandler
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  onAddNew:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 993586434}
+        m_TargetAssemblyTypeName: DMScreenManager, Assembly-CSharp
+        m_MethodName: AddNewBackgroundButtonInspectorHandler
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &794156100
 GameObject:
   m_ObjectHideFlags: 0
@@ -1980,8 +2053,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a0e0197785d41c48599eeb6b64d713e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playersScreen: {fileID: 1975616817}
-  dmScreen: {fileID: 993586433}
+  dmScreenManager: {fileID: 993586434}
 --- !u!4 &874391753
 Transform:
   m_ObjectHideFlags: 0
@@ -2259,7 +2331,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 989744256}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 993586434}
+        m_TargetAssemblyTypeName: DMScreenManager, Assembly-CSharp
+        m_MethodName: RefreshButtonInspectorHandler
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &989744256
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2307,6 +2391,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 993586432}
+  - component: {fileID: 993586434}
   - component: {fileID: 993586433}
   m_Layer: 5
   m_Name: DMScreen
@@ -2322,7 +2407,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 993586431}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -2352,16 +2437,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c3f81c3d455aa47018ebb3fa1a34b581, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  backgroundImage: {fileID: 965296748}
   scrollRect: {fileID: 415192062}
   scrollContent: {fileID: 527603033}
   characterInitiativeLayoutPrefab: {fileID: 1562588353188004177, guid: 0be48faf227564ec8be0e4059f52358a, type: 3}
-  createButton: {fileID: 2028826144}
-  editButton: {fileID: 421488919}
-  changeBGButton: {fileID: 1076919831}
-  addMoreButton: {fileID: 1767634169}
-  refreshButton: {fileID: 989744255}
-  changeBGPopup: {fileID: 1077566598}
+--- !u!114 &993586434
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 993586431}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6232af27157a3442a969a710dca56923, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  dataManager: {fileID: 2049405835}
+  background: {fileID: 965296748}
+  dmScreen: {fileID: 993586433}
+  changeBGPopup: {fileID: 737639089}
 --- !u!1 &997093296
 GameObject:
   m_ObjectHideFlags: 0
@@ -2580,7 +2674,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1076919832}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 993586434}
+        m_TargetAssemblyTypeName: DMScreenManager, Assembly-CSharp
+        m_MethodName: ChangeBGButtonInspectorHandler
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1076919832
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2674,6 +2780,15 @@ MonoBehaviour:
   closeButton: {fileID: 597865657}
   nameDropdown: {fileID: 403662864}
   addNewButton: {fileID: 1932891370}
+  onClose:
+    m_PersistentCalls:
+      m_Calls: []
+  onSelectionChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  onAddNew:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &1137452159
 GameObject:
   m_ObjectHideFlags: 0
@@ -2839,7 +2954,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c101e1154240a4ee3bcfc86bbf053a74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  dndITManager: {fileID: 1431069373}
+  dataManager: {fileID: 2049405835}
   canvasManager: {fileID: 874391752}
 --- !u!4 &1424075262
 Transform:
@@ -2848,50 +2963,6 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1424075260}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 2004058998}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1431069372
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1431069374}
-  - component: {fileID: 1431069373}
-  m_Layer: 0
-  m_Name: DnDITManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1431069373
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1431069372}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0e42f2d9fbcdd44b596847400036d1b7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!4 &1431069374
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1431069372}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -3625,7 +3696,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1767634170}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 993586434}
+        m_TargetAssemblyTypeName: DMScreenManager, Assembly-CSharp
+        m_MethodName: AddMoreButtonInspectorHandler
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1767634170
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4035,7 +4118,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1424075262}
-  - {fileID: 1431069374}
+  - {fileID: 2049405836}
   - {fileID: 874391753}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -4121,7 +4204,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 2028826145}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 993586434}
+        m_TargetAssemblyTypeName: DMScreenManager, Assembly-CSharp
+        m_MethodName: CreateCharacterButtonInspectorHandler
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &2028826145
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4160,6 +4255,50 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2028826142}
   m_CullTransparentMesh: 1
+--- !u!1 &2049405834
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2049405836}
+  - component: {fileID: 2049405835}
+  m_Layer: 0
+  m_Name: DataManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2049405835
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2049405834}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc18752f72f9494d957f32e29e732eab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!4 &2049405836
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2049405834}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2004058998}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2061512550
 GameObject:
   m_ObjectHideFlags: 0

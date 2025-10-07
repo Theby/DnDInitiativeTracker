@@ -9,6 +9,8 @@ namespace DnDInitiativeTracker.Controller
 {
     public static class NativeGalleryController
     {
+        const string AlbumName = "DnDIT";
+
         public static async Task RequestPermissions()
         {
             Task readTask = NativeGallery.RequestPermissionAsync(NativeGallery.PermissionType.Read,
@@ -20,63 +22,102 @@ namespace DnDInitiativeTracker.Controller
             await writeTask;
         }
 
-        public static void GetImageFromGallery(Action<Texture2D> onComplete)
+        public static void GetImageFromGallery(Action<Texture2D> onComplete = null, bool saveToGallery = false, Action<string, string> onSaveComplete = null)
         {
             NativeGallery.GetImageFromGallery(path =>
             {
                 if (path == null)
                     return;
 
-                Texture2D texture = NativeGallery.LoadImageAtPath(path);
-                if (texture == null)
-                    return;
+                var texture = GetImageFromPath(path);
 
-                var fileName = Path.GetFileNameWithoutExtension(path);
-                texture.name = fileName;
+                if (saveToGallery)
+                {
+                    SaveImageToGallery(path, AlbumName, texture.name, onSaveComplete);
+                }
 
                 onComplete?.Invoke(texture);
-
-                // NativeGallery.SaveImageToGallery(path, "DnDIT", fileName, (success, s) =>
-                // {
-                //     onComplete?.Invoke(texture);
-                // });
             });
         }
 
-        public static IEnumerator LoadAudioClip(string path)
+        public static Texture2D GetImageFromPath(string path)
         {
-            var uri = new System.Uri(path);
+            var texture = NativeGallery.LoadImageAtPath(path);
+            if (texture == null)
+                return null;
 
-            AudioType audioType = AudioType.UNKNOWN;
-            if (path.EndsWith(".mp3", System.StringComparison.OrdinalIgnoreCase))
+            var fileName = Path.GetFileNameWithoutExtension(path);
+            texture.name = fileName;
+
+            return texture;
+        }
+
+        public static void SaveImageToGallery(string path, string albumName, string fileName, Action<string, string> onComplete = null)
+        {
+            string fullPath = path;
+            string currentFileName = fileName;
+            NativeGallery.SaveImageToGallery(fullPath, albumName, currentFileName, (success, savePath) =>
+            {
+                #if UNITY_EDITOR
+                    onComplete?.Invoke(fullPath, currentFileName);
+                #else
+                    onComplete?.Invoke(savePath, currentFileName);
+                #endif
+            });
+        }
+
+        public static void GetAudioFromGallery(Action<AudioClip> onComplete = null)
+        {
+            NativeGallery.GetAudioFromGallery(path =>
+            {
+                if (path == null)
+                    return;
+
+                GetAudioClipFromPath(path, onComplete);
+            });
+        }
+
+        public static async Task GetAudioClipFromPath(string path, Action<AudioClip> onComplete = null)
+        {
+            var uri = new Uri(path);
+
+            var audioType = AudioType.UNKNOWN;
+            if (path.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
             {
                 audioType = AudioType.MPEG;
             }
-            else if (path.EndsWith(".wav", System.StringComparison.OrdinalIgnoreCase))
+            else if (path.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
             {
                 audioType = AudioType.WAV;
             }
-            else if (path.EndsWith(".ogg", System.StringComparison.OrdinalIgnoreCase))
+            else if (path.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase))
             {
                 audioType = AudioType.OGGVORBIS;
             }
 
             using UnityWebRequest www = UnityWebRequestMultimedia.GetAudioClip(uri, audioType);
-            yield return www.SendWebRequest();
+            await www.SendWebRequest();
 
+            AudioClip audioClip;
             if (www.result is not UnityWebRequest.Result.Success)
             {
-                Debug.LogError(
-                    $"Error loading audio: {www.error} - Uri path: {uri.AbsolutePath} - AudioType: {audioType}");
-                yield break;
+                Debug.LogError($"Error loading audio: {www.error} - Uri path: {uri.AbsolutePath} - AudioType: {audioType}");
+                audioClip = null;
+            }
+            else
+            {
+                audioClip = DownloadHandlerAudioClip.GetContent(www);
             }
 
-            var _audioClip = DownloadHandlerAudioClip.GetContent(www);
-            if (_audioClip != null)
+            onComplete?.Invoke(audioClip);
+        }
+
+        public static void SaveAudioToGallery(string path, string albumName, string fileName, Action OnComplete = null)
+        {
+            NativeGallery.SaveAudioToGallery(path, albumName, fileName, (success, s) =>
             {
-                // NativeGallery.SaveAudioToGallery(path, "DnDIT", "loadedAudioClip",
-                //     (success, s) => { imagePath.text = $"Saving to {s} - {success}"; });
-            }
+                OnComplete?.Invoke();
+            });
         }
     }
 }

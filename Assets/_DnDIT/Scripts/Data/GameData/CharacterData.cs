@@ -12,6 +12,8 @@ namespace DnDInitiativeTracker.GameData
         public List<MediaAssetData> AudioDataList { get; set; }
         public int Initiative { get; set; }
 
+        public CharacterData() { }
+
         public CharacterData(CharacterSQLData sqlData, MediaAssetData avatarData, List<MediaAssetData> audioDataList)
             : base(sqlData)
         {
