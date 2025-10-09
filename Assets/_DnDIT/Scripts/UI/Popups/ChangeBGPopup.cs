@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using DnDInitiativeTracker.UIData;
 using TMPro;
 using UnityEngine;
@@ -9,6 +8,7 @@ namespace DnDInitiativeTracker.UI
 {
     public class ChangeBGPopup : Panel
     {
+        [Header("UI")]
         [SerializeField] Button closeButton;
         [SerializeField] TMP_Dropdown nameDropdown;
         [SerializeField] Button addNewButton;
@@ -17,6 +17,8 @@ namespace DnDInitiativeTracker.UI
         [SerializeField] UnityEvent<int> onSelectionChanged;
         [SerializeField] UnityEvent onAddNew;
 
+        DMScreenData _data;
+
         public override void Initialize()
         {
             closeButton.onClick.AddListener(onClose.Invoke);
@@ -24,12 +26,24 @@ namespace DnDInitiativeTracker.UI
             addNewButton.onClick.AddListener(onAddNew.Invoke);
         }
 
-        public void SetData(string currentName, List<string> backgroundNames)
+        public void SetData(DMScreenData data)
+        {
+            _data = data;
+        }
+
+        public override void Show()
+        {
+            base.Show();
+
+            Refresh();
+        }
+
+        public void Refresh()
         {
             nameDropdown.ClearOptions();
-            nameDropdown.AddOptions(backgroundNames);
+            nameDropdown.AddOptions(_data.BackgroundNames);
 
-            var dropDownIndex = nameDropdown.options.FindIndex(x => x.text == currentName);
+            var dropDownIndex = nameDropdown.options.FindIndex(x => x.text == _data.CurrentBackground.Name);
             nameDropdown.value = dropDownIndex;
         }
     }

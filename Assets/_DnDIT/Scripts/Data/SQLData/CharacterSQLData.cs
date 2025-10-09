@@ -22,6 +22,9 @@ namespace DnDInitiativeTracker.SQLData
 
         int[] GetAudioAssetIds()
         {
+            if (string.IsNullOrEmpty(AudioMediaAssetIds))
+                return Array.Empty<int>();
+
             var splitIds = AudioMediaAssetIds.Split(',');
             return splitIds.Select(int.Parse).ToArray();
         }

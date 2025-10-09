@@ -43,7 +43,7 @@ namespace DnDInitiativeTracker.UI
             var characterInitiativeLayout = Instantiate(characterInitiativeLayoutPrefab, scrollContent.transform);
 
             var positionIndex = _layoutList.Count + 1;
-            var nameList = _data.AllCharacterNames;
+            var nameList = _data.CharacterNames;
             characterInitiativeLayout.Initialize(positionIndex);
             characterInitiativeLayout.SetData(characterUIData, nameList);
             characterInitiativeLayout.OnRemove += OnRemoveLayout;

@@ -4,6 +4,7 @@ namespace DnDInitiativeTracker.GameData
 {
     public class BackgroundData : FromSQLData<BackgroundSQLData>
     {
+        public string Name => MediaAssetData.Name;
         public MediaAssetData MediaAssetData { get; set; }
 
         public BackgroundData() { }
@@ -20,7 +21,7 @@ namespace DnDInitiativeTracker.GameData
                 SQLId,
                 Enabled,
                 InputDate,
-                MediaAssetData?.SQLId ?? -1
+                MediaAssetData?.SQLId ?? 0
             );
         }
     }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using DnDInitiativeTracker.GameData;
@@ -20,7 +21,7 @@ namespace DnDInitiativeTracker.Controller
             CreateSQLTables();
         }
 
-        void Dispose()
+        public void Dispose()
         {
             _sqLiteService?.Clear();
         }
@@ -35,10 +36,17 @@ namespace DnDInitiativeTracker.Controller
 
         #region Media Assets
 
-        public void AddMediaAsset(MediaAssetData mediaAsset)
+        public bool IsMediaAssetsTableEmpty()
+        {
+            return _sqLiteService.IsTableEmpty<MediaAssetSQLData>();
+        }
+
+        public int AddMediaAsset(MediaAssetData mediaAsset)
         {
             var mediaAssetSQL = mediaAsset.ToSQLData();
             _sqLiteService.Insert(mediaAssetSQL);
+
+            return mediaAssetSQL.Id;
         }
 
         public MediaAssetData GetMediaAssetById(int id)
@@ -99,6 +107,12 @@ namespace DnDInitiativeTracker.Controller
             return data.Select(CreateCharacterData).ToDictionary(character => character.Name);
         }
 
+        public List<string> GetAllCharactersNames()
+        {
+            var names =_sqLiteService.GetTableQuery<CharacterSQLData>().Select(c => c.Name);
+            return names.ToList();
+        }
+
         public void UpdateCharacter(CharacterData character)
         {
             var sqlData = character.ToSQLData();
@@ -118,10 +132,23 @@ namespace DnDInitiativeTracker.Controller
 
         #region Background
 
-        public void AddBackground(BackgroundData background)
+        public bool IsBackgroundTableEmpty()
         {
+            return _sqLiteService.IsTableEmpty<BackgroundSQLData>();
+        }
+
+        public int AddBackground(BackgroundData background)
+        {
+            if (background.MediaAssetData.SQLId == 0)
+            {
+                var mediaId = AddMediaAsset(background.MediaAssetData);
+                background.MediaAssetData.SQLId = mediaId;
+            }
+
             var backgroundSQL = background.ToSQLData();
             _sqLiteService.Insert(backgroundSQL);
+
+            return backgroundSQL.Id;
         }
 
         public BackgroundData GetBackgroundById(int id)
@@ -134,10 +161,24 @@ namespace DnDInitiativeTracker.Controller
             return background;
         }
 
-        public Dictionary<string, BackgroundData> GetAllBackgrounds()
+        public BackgroundData GetBackgroundByName(string name)
         {
-            var data = _sqLiteService.GetAll<BackgroundSQLData>();
-            return data.Select(CreateBackgroundData).ToDictionary(bg => bg.MediaAssetData.Name);
+            var mediaAsset = _sqLiteService.GetBy<MediaAssetSQLData>(m => m.Name == name);
+            if (mediaAsset == null)
+                return null;
+
+            var sqlData = _sqLiteService.GetBy<BackgroundSQLData>(b => b.MediaAssetId == mediaAsset.Id);
+            if (sqlData == null)
+                return null;
+
+            return CreateBackgroundData(sqlData);
+        }
+
+        public List<string> GetAllBackgroundNames()
+        {
+            var mediaIds = _sqLiteService.GetTableQuery<BackgroundSQLData>().Select(b => b.MediaAssetId);
+            var names = _sqLiteService.GetAllBy<MediaAssetSQLData>(m => mediaIds.Contains(m.Id)).Select(m => m.Name);
+            return names.ToList();
         }
 
         BackgroundData CreateBackgroundData(BackgroundSQLData sqlData)
@@ -151,6 +192,11 @@ namespace DnDInitiativeTracker.Controller
         #endregion
 
         #region Current Configuration
+
+        public bool IsCurrentConfigurationTableEmpty()
+        {
+            return _sqLiteService.IsTableEmpty<CurrentConfigurationSQLData>();
+        }
 
         public void AddCurrentConfiguration(CurrentConfigurationData currentConfiguration)
         {

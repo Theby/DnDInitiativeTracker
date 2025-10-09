@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using SQLite;
+using UnityEngine;
 
 namespace DnDInitiativeTracker.SQLData
 {
@@ -22,6 +23,9 @@ namespace DnDInitiativeTracker.SQLData
 
         int[] GetCharacterIds()
         {
+            if (string.IsNullOrEmpty(CharacterIds))
+                return Array.Empty<int>();
+
             var splitIds = CharacterIds.Split(',');
             return splitIds.Select(int.Parse).ToArray();
         }

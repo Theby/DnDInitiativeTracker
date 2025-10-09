@@ -34,7 +34,7 @@ namespace DnDInitiativeTracker.GameData
                 SQLId,
                 Enabled,
                 InputDate,
-                AvatarData?.SQLId ?? -1,
+                AvatarData?.SQLId ?? 0,
                 Name,
                 audioIdList
             );

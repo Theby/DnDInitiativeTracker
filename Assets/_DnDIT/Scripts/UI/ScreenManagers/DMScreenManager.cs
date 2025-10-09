@@ -1,7 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
-using DnDInitiativeTracker.Controller;
-using DnDInitiativeTracker.GameData;
 using DnDInitiativeTracker.Manager;
 using DnDInitiativeTracker.UI;
 using DnDInitiativeTracker.UIData;
@@ -15,9 +11,11 @@ public class DMScreenManager : MonoBehaviour
     [Header("UI")]
     [SerializeField] RawImage background;
     [SerializeField] DMScreen dmScreen;
+    [SerializeField] CreateCharacterPopup createCharacterPopup;
+    [SerializeField] EditCharacterPopup editCharacterPopup;
     [SerializeField] ChangeBGPopup changeBGPopup;
 
-    DMScreenData _data;
+    DMScreenData _data = new();
 
     public void Initialize()
     {
@@ -25,65 +23,42 @@ public class DMScreenManager : MonoBehaviour
         dmScreen.OnRemoveLayout += RemoveCharacterLayoutHandler;
 
         changeBGPopup.Initialize();
+
+        dataManager.OnDataUpdated += Refresh;
     }
 
     public void Show()
     {
         HidePopups();
 
-        _data = new DMScreenData();
-
-        //TODO I think data should be loaded before showing the screen,  this "current" is shown in player
-        // screen too after all
-        var currentConfig = dataManager.CurrentConfiguration;
-        if (currentConfig != null)
-        {
-            _data.CurrentEncounter = new List<CharacterUIData>();
-            foreach (var currentEncounterData in currentConfig.Characters)
-            {
-                var characterUIData = new CharacterUIData
-                {
-                    AvatarTexture = NativeGalleryController.GetImageFromPath(currentEncounterData.AvatarData.Path),
-                    Name = currentEncounterData.Name,
-                    //var audioClips = currentEncounterData.AudioDataList //TODO it loads in coroutine
-                    Initiative = currentEncounterData.Initiative
-                };
-
-                _data.CurrentEncounter.Add(characterUIData);
-            }
-
-            _data.AllCharacterNames = dataManager.GetAllCharacters().Keys.ToList();
-
-            var backgroundUIData = new BackgroundUIData
-            {
-                Name = currentConfig.Background.MediaAssetData.Name,
-                BackgroundTexture = NativeGalleryController.GetImageFromPath(currentConfig.Background.MediaAssetData.Path)
-            };
-            _data.CurrentBackground = backgroundUIData;
-        }
-
-        _data.DefaultCharacter = new CharacterUIData
-        {
-            AvatarTexture = Resources.Load<Texture2D>(dataManager.DefaultCharacter.AvatarData.Path),
-            Name = dataManager.DefaultCharacter.Name,
-            AudioClips = dataManager.DefaultCharacter.AudioDataList.Select(asset => Resources.Load<AudioClip>(asset.Path)).ToList(),
-            Initiative = dataManager.DefaultCharacter.Initiative
-        };
-
-        var bgNames = dataManager.GetAllBackgrounds().Keys.ToList();
-        bgNames.Add(dataManager.DefaultBackground.MediaAssetData.Name);
-        _data.AllBackgroundNames = bgNames;
-
-        _data.DefaultBackground  = new BackgroundUIData
-        {
-            Name = dataManager.DefaultBackground.MediaAssetData.Name,
-            BackgroundTexture = Resources.Load<Texture>(dataManager.DefaultBackground.MediaAssetData.Path)
-        };
-        _data.CurrentBackground ??= _data.DefaultBackground;
-        background.texture = _data.CurrentBackground.BackgroundTexture;
+        RefreshData();
 
         dmScreen.SetData(_data);
         dmScreen.Show();
+    }
+
+    void ShowChangeBGPopup()
+    {
+        changeBGPopup.SetData(_data);
+        changeBGPopup.Show();
+    }
+
+    void ShowCreateCharacterPopup()
+    {
+        changeBGPopup.SetData(_data);
+        changeBGPopup.Show();
+    }
+
+    void ShowEditCharacterPopup()
+    {
+        changeBGPopup.SetData(_data);
+        changeBGPopup.Show();
+    }
+
+    public void Hide()
+    {
+        dmScreen.Hide();
+        HidePopups();
     }
 
     void HidePopups()
@@ -91,22 +66,40 @@ public class DMScreenManager : MonoBehaviour
         changeBGPopup.Hide();
     }
 
-    void ShowChangeBGPopup()
+    void Refresh()
     {
-        changeBGPopup.SetData(_data.CurrentBackground.Name, _data.AllBackgroundNames);
-        changeBGPopup.Show();
+        RefreshData();
+        RefreshBackground();
+
+        if (changeBGPopup.gameObject.activeSelf)
+        {
+            changeBGPopup.Refresh();
+        }
+    }
+
+    void RefreshData()
+    {
+        _data.CurrentEncounter = dataManager.CurrentEncounter;
+        _data.CharacterNames = dataManager.GetAllCharacterNames();
+        _data.CurrentBackground = dataManager.CurrentBackground;
+        _data.BackgroundNames = dataManager.GetAllBackgroundNames();
+    }
+
+    void RefreshBackground()
+    {
+        background.texture = dataManager.CurrentBackground.BackgroundTexture;
     }
 
     #region Inspector Handlers
 
     public void CreateCharacterButtonInspectorHandler()
     {
-
+        ShowCreateCharacterPopup();
     }
 
     public void EditCharacterButtonInspectorHandler()
     {
-
+        ShowEditCharacterPopup();
     }
 
     public void ChangeBGButtonInspectorHandler()
@@ -116,56 +109,30 @@ public class DMScreenManager : MonoBehaviour
 
     public void AddMoreButtonInspectorHandler()
     {
-        dmScreen.AddCharacterInitiativeLayout(null); //pass default character
+        //dmScreen.AddCharacterInitiativeLayout(null); //pass default character
     }
 
     public void RefreshButtonInspectorHandler()
     {
-        dmScreen.RefreshCharacterInitiativeLayoutList();
+        //dmScreen.RefreshCharacterInitiativeLayoutList();
     }
 
     public void BackgroundSelectionDropdownInspectorHandler(int index)
     {
-        Debug.Log($"BackgroundSelectionDropdownInspectorHandler {index}");
-        if (_data.AllBackgroundNames.Count <= index)
-        {
+        if (_data.BackgroundNames.Count <= index)
             return;
-        }
 
-        var bgName = _data.AllBackgroundNames[index];
-        var bgData = dataManager.GetAllBackgrounds()[bgName];
-        _data.CurrentBackground = new BackgroundUIData
-        {
-            Name = bgName,
-            BackgroundTexture = NativeGalleryController.GetImageFromPath(bgData.MediaAssetData.Path)
-        };
-        background.texture = _data.CurrentBackground.BackgroundTexture;
+        var bgName = _data.BackgroundNames[index];
+        if (_data.CurrentBackground.Name == bgName)
+            return;
+
+        dataManager.UpdateCurrentBackground(bgName);
     }
 
     public void AddNewBackgroundButtonInspectorHandler()
     {
-        NativeGalleryController.GetImageFromGallery(texture =>
-        {
-            _data.CurrentBackground = new BackgroundUIData
-            {
-                Name = texture.name,
-                BackgroundTexture = texture
-            };
-            background.texture = _data.CurrentBackground.BackgroundTexture;
-        },
-            true, (fullPath, fileName) =>
-            {
-                var backgroundData = new BackgroundData
-                {
-                    MediaAssetData = new MediaAssetData
-                    {
-                        Name = fileName,
-                        Type = NativeGallery.MediaType.Image,
-                        Path = fullPath,
-                    },
-                };
-                dataManager.AddBackground(backgroundData);
-            });
+        //TODO show loader and stop on complete
+        dataManager.TryCreateNewBackground();
     }
 
     #endregion

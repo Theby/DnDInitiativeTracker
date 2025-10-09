@@ -1,5 +1,5 @@
 using System;
-using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -10,6 +10,23 @@ namespace DnDInitiativeTracker.Controller
     public static class NativeGalleryController
     {
         const string AlbumName = "DnDIT";
+
+        static readonly Dictionary<string, AudioType> AudioTypeMap = new()
+        {
+            {".mp3", AudioType.MPEG},
+            {".wav", AudioType.WAV},
+            {".ogg", AudioType.OGGVORBIS},
+            {".aiff", AudioType.AIFF},
+            {".aif", AudioType.AIFF},
+            {".mod", AudioType.MOD},
+            {".it", AudioType.IT},
+            {".s3m", AudioType.S3M},
+            {".xm", AudioType.XM},
+            {".xma", AudioType.XMA},
+            {".vag", AudioType.VAG},
+            {".mp2", AudioType.MPEG},
+            {".acc", AudioType.ACC},
+        };
 
         public static async Task RequestPermissions()
         {
@@ -22,22 +39,9 @@ namespace DnDInitiativeTracker.Controller
             await writeTask;
         }
 
-        public static void GetImageFromGallery(Action<Texture2D> onComplete = null, bool saveToGallery = false, Action<string, string> onSaveComplete = null)
+        public static void GetImagePathFromGallery(Action<string> onComplete)
         {
-            NativeGallery.GetImageFromGallery(path =>
-            {
-                if (path == null)
-                    return;
-
-                var texture = GetImageFromPath(path);
-
-                if (saveToGallery)
-                {
-                    SaveImageToGallery(path, AlbumName, texture.name, onSaveComplete);
-                }
-
-                onComplete?.Invoke(texture);
-            });
+            NativeGallery.GetImageFromGallery(onComplete.Invoke);
         }
 
         public static Texture2D GetImageFromPath(string path)
@@ -52,71 +56,60 @@ namespace DnDInitiativeTracker.Controller
             return texture;
         }
 
-        public static void SaveImageToGallery(string path, string albumName, string fileName, Action<string, string> onComplete = null)
+        public static void SaveImageToGallery(string path, Action<string, string> onComplete = null)
         {
-            string fullPath = path;
-            string currentFileName = fileName;
-            NativeGallery.SaveImageToGallery(fullPath, albumName, currentFileName, (success, savePath) =>
+            var fullPath = path;
+            var currentFileName = Path.GetFileNameWithoutExtension(path);
+            NativeGallery.SaveImageToGallery(fullPath, AlbumName, currentFileName, (success, savePath) =>
             {
                 #if UNITY_EDITOR
                     onComplete?.Invoke(fullPath, currentFileName);
                 #else
-                    onComplete?.Invoke(savePath, currentFileName);
+                    var newFileName = Path.GetFileNameWithoutExtension(savePath);
+                    onComplete?.Invoke(savePath, newFileName);
                 #endif
             });
         }
 
-        public static void GetAudioFromGallery(Action<AudioClip> onComplete = null)
+        public static void GetAudioPathFromGallery(Action<string> onComplete)
         {
-            NativeGallery.GetAudioFromGallery(path =>
-            {
-                if (path == null)
-                    return;
-
-                GetAudioClipFromPath(path, onComplete);
-            });
+            NativeGallery.GetAudioFromGallery(onComplete.Invoke);
         }
 
         public static async Task GetAudioClipFromPath(string path, Action<AudioClip> onComplete = null)
         {
             var uri = new Uri(path);
+            var audioType = GetAudioType(path);
 
-            var audioType = AudioType.UNKNOWN;
-            if (path.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
-            {
-                audioType = AudioType.MPEG;
-            }
-            else if (path.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
-            {
-                audioType = AudioType.WAV;
-            }
-            else if (path.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase))
-            {
-                audioType = AudioType.OGGVORBIS;
-            }
-
-            using UnityWebRequest www = UnityWebRequestMultimedia.GetAudioClip(uri, audioType);
+            using var www = UnityWebRequestMultimedia.GetAudioClip(uri, audioType);
             await www.SendWebRequest();
 
-            AudioClip audioClip;
-            if (www.result is not UnityWebRequest.Result.Success)
-            {
-                Debug.LogError($"Error loading audio: {www.error} - Uri path: {uri.AbsolutePath} - AudioType: {audioType}");
-                audioClip = null;
-            }
-            else
-            {
-                audioClip = DownloadHandlerAudioClip.GetContent(www);
-            }
-
+            var audioClip = www.result is not UnityWebRequest.Result.Success
+                ? null
+                : DownloadHandlerAudioClip.GetContent(www);
             onComplete?.Invoke(audioClip);
         }
 
-        public static void SaveAudioToGallery(string path, string albumName, string fileName, Action OnComplete = null)
+        static AudioType GetAudioType(string path)
         {
-            NativeGallery.SaveAudioToGallery(path, albumName, fileName, (success, s) =>
+            var extension = Path.GetExtension(path)?.ToLowerInvariant();
+            return string.IsNullOrEmpty(extension)
+                ? AudioType.UNKNOWN
+                : AudioTypeMap.GetValueOrDefault(extension, AudioType.UNKNOWN);
+        }
+
+        public static void SaveAudioToGallery(string path, Action<string, string> onComplete = null)
+        {
+            var fullPath = path;
+            var currentFileName = Path.GetFileNameWithoutExtension(path);
+            NativeGallery.SaveAudioToGallery(fullPath, AlbumName, currentFileName, (success, s) =>
             {
-                OnComplete?.Invoke();
+#if UNITY_EDITOR
+                onComplete?.Invoke(fullPath, currentFileName);
+#else
+                var newFileName = Path.GetFileNameWithoutExtension(savePath);
+                onComplete?.Invoke(savePath, newFileName);
+#endif
             });
         }
     }

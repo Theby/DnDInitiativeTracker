@@ -2053,6 +2053,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a0e0197785d41c48599eeb6b64d713e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  dataManager: {fileID: 2049405835}
+  background: {fileID: 965296748}
   dmScreenManager: {fileID: 993586434}
 --- !u!4 &874391753
 Transform:

@@ -13,7 +13,8 @@ namespace DnDInitiativeTracker.Manager
         {
             yield return NativeGalleryController.RequestPermissions();
 
-            dataManager.Initialize();
+            yield return dataManager.Initialize();
+
             canvasManager.Initialize();
 
             canvasManager.ShowDMScreen();

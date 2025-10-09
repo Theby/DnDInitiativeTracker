@@ -6,8 +6,10 @@ namespace DnDInitiativeTracker.GameData
 {
     public class CurrentConfigurationData : FromSQLData<CurrentConfigurationSQLData>
     {
-        public List<CharacterData> Characters { get; set; }
+        public List<CharacterData> Characters { get; set; } = new();
         public BackgroundData Background { get; set; }
+
+        public CurrentConfigurationData() { }
 
         public CurrentConfigurationData(CurrentConfigurationSQLData sqlData, List<CharacterData> characters, BackgroundData backgroundData)
             : base(sqlData)
@@ -24,7 +26,7 @@ namespace DnDInitiativeTracker.GameData
                 Enabled,
                 InputDate,
                 characterIdList,
-                Background?.SQLId ?? -1
+                Background?.SQLId ?? 0
             );
         }
     }
