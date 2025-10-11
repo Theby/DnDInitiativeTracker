@@ -1137,19 +1137,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 421488920}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 993586434}
-        m_TargetAssemblyTypeName: DMScreenManager, Assembly-CSharp
-        m_MethodName: EditCharacterButtonInspectorHandler
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &421488920
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3917,19 +3905,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 989744256}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 993586434}
-        m_TargetAssemblyTypeName: DMScreenManager, Assembly-CSharp
-        m_MethodName: RefreshButtonInspectorHandler
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &989744256
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4027,6 +4003,116 @@ MonoBehaviour:
   scrollRect: {fileID: 415192062}
   scrollContent: {fileID: 527603033}
   characterInitiativeLayoutPrefab: {fileID: 1562588353188004177, guid: 0be48faf227564ec8be0e4059f52358a, type: 3}
+  addMoreButton: {fileID: 1767634169}
+  refreshButton: {fileID: 989744255}
+  createCharacterButton: {fileID: 2028826144}
+  editCharacterButton: {fileID: 421488919}
+  changeBGButton: {fileID: 1076919831}
+  onAddMore:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 993586434}
+        m_TargetAssemblyTypeName: DMScreenManager, Assembly-CSharp
+        m_MethodName: AddMoreButtonInspectorHandler
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  onRefresh:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 993586434}
+        m_TargetAssemblyTypeName: DMScreenManager, Assembly-CSharp
+        m_MethodName: RefreshButtonInspectorHandler
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  onCharacterSelected:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 993586434}
+        m_TargetAssemblyTypeName: DMScreenManager, Assembly-CSharp
+        m_MethodName: CharacterEncounterSelectedInspectorHandler
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  onRemoveLayout:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 993586434}
+        m_TargetAssemblyTypeName: DMScreenManager, Assembly-CSharp
+        m_MethodName: RemoveCharacterLayoutInspectorHandler
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  onCreateCharacter:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 993586434}
+        m_TargetAssemblyTypeName: DMScreenManager, Assembly-CSharp
+        m_MethodName: CreateCharacterButtonInspectorHandler
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  onEditCharacter:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 993586434}
+        m_TargetAssemblyTypeName: DMScreenManager, Assembly-CSharp
+        m_MethodName: EditCharacterButtonInspectorHandler
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  onChangeBG:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 993586434}
+        m_TargetAssemblyTypeName: DMScreenManager, Assembly-CSharp
+        m_MethodName: ChangeBGButtonInspectorHandler
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &993586434
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4448,19 +4534,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1076919832}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 993586434}
-        m_TargetAssemblyTypeName: DMScreenManager, Assembly-CSharp
-        m_MethodName: ChangeBGButtonInspectorHandler
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &1076919832
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6110,19 +6184,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1767634170}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 993586434}
-        m_TargetAssemblyTypeName: DMScreenManager, Assembly-CSharp
-        m_MethodName: AddMoreButtonInspectorHandler
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &1767634170
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7150,19 +7212,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 2028826145}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 993586434}
-        m_TargetAssemblyTypeName: DMScreenManager, Assembly-CSharp
-        m_MethodName: CreateCharacterButtonInspectorHandler
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &2028826145
 MonoBehaviour:
   m_ObjectHideFlags: 0

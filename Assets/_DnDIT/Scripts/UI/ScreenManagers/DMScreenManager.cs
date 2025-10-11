@@ -23,12 +23,13 @@ public class DMScreenManager : MonoBehaviour
     public void Initialize()
     {
         dmScreen.Initialize();
-        dmScreen.OnRemoveLayout += RemoveCharacterLayoutHandler;
 
         createCharacterPopup.Initialize();
         editCharacterPopup.Initialize();
         changeBGPopup.Initialize();
 
+        //maybe not necessary, check how popups handle the call to refresh
+        //so far only change bg uses this
         dataManager.OnDataUpdated += Refresh;
     }
 
@@ -40,9 +41,12 @@ public class DMScreenManager : MonoBehaviour
     public void Show()
     {
         HidePopups();
-
         RefreshData();
+        ShowDMScreen();
+    }
 
+    void ShowDMScreen()
+    {
         dmScreen.SetData(_data);
         dmScreen.Show();
     }
@@ -84,6 +88,7 @@ public class DMScreenManager : MonoBehaviour
     {
         RefreshData();
         RefreshBackground();
+        RefreshScreen();
         RefreshPopup();
     }
 
@@ -99,6 +104,11 @@ public class DMScreenManager : MonoBehaviour
     void RefreshBackground()
     {
         background.texture = dataManager.CurrentBackground.BackgroundTexture;
+    }
+
+    void RefreshScreen()
+    {
+        dmScreen.Refresh();
     }
 
     void RefreshPopup()
@@ -117,6 +127,43 @@ public class DMScreenManager : MonoBehaviour
         {
             changeBGPopup.Refresh();
         }
+    }
+
+    void AddCharacterToEncounter()
+    {
+        dmScreen.AddCharacterInitiativeLayout();
+    }
+
+    void RefreshEncounterOrder()
+    {
+        dmScreen.RefreshCharacterInitiativeLayoutList();
+
+        //TODO Maybe Encounter, Audio and Avatar should be its own SQL Class like Background
+        var updatedEncounter = dmScreen.GetEncounter();
+        dataManager.UpdateEncounter(updatedEncounter);
+    }
+
+    void CharacterEncounterSelected(int layoutIndex, string characterName)
+    {
+        //TODO maybe this UI and layouts should only use the name and initaitive
+        //in a simple data structure and you get the proper data later when saving or going
+        //back to PlayerScreen
+        var characterData = dataManager.GetCharacterByName(characterName);
+        dataManager.CreateCharacterUIData(characterData, characterUIData =>
+        {
+            dmScreen.RefreshLayout(layoutIndex, characterUIData);
+
+            var updatedEncounter = dmScreen.GetEncounter();
+            dataManager.UpdateEncounter(updatedEncounter);
+        });
+    }
+
+    void RemoveCharacterFromEncounter(int positionIndex)
+    {
+        dmScreen.RemoveCharacterInitiativeLayout(positionIndex);
+
+        var updatedEncounter = dmScreen.GetEncounter();
+        dataManager.UpdateEncounter(updatedEncounter);
     }
 
     void ChangeEditableCharacterAvatar()
@@ -257,6 +304,26 @@ public class DMScreenManager : MonoBehaviour
 
     #region Inspector Handlers
 
+    public void AddMoreButtonInspectorHandler()
+    {
+        AddCharacterToEncounter();
+    }
+
+    public void RefreshButtonInspectorHandler()
+    {
+        RefreshEncounterOrder();
+    }
+
+    public void CharacterEncounterSelectedInspectorHandler(int layoutIndex, string characterName)
+    {
+        CharacterEncounterSelected(layoutIndex, characterName);
+    }
+
+    public void RemoveCharacterLayoutInspectorHandler(int positionIndex)
+    {
+        RemoveCharacterFromEncounter(positionIndex);
+    }
+
     public void CreateCharacterButtonInspectorHandler()
     {
         ShowCreateCharacterPopup();
@@ -270,16 +337,6 @@ public class DMScreenManager : MonoBehaviour
     public void ChangeBGButtonInspectorHandler()
     {
         ShowChangeBGPopup();
-    }
-
-    public void AddMoreButtonInspectorHandler()
-    {
-        //dmScreen.AddCharacterInitiativeLayout(null); //pass default character
-    }
-
-    public void RefreshButtonInspectorHandler()
-    {
-        //dmScreen.RefreshCharacterInitiativeLayoutList();
     }
 
     public void ChangeImageButtonInspectorHandler()
@@ -330,15 +387,6 @@ public class DMScreenManager : MonoBehaviour
     public void AddNewBackgroundButtonInspectorHandler()
     {
         AddNewBackground();
-    }
-
-    #endregion
-
-    #region Handlers
-
-    void RemoveCharacterLayoutHandler(int positionIndex)
-    {
-        //dmScreen.RemoveCharacterInitiativeLayout(positionIndex);
     }
 
     #endregion

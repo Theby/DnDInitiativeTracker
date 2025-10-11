@@ -270,6 +270,19 @@ namespace DnDInitiativeTracker.Manager
             onComplete?.Invoke(characterUIData);
         }
 
+        public void UpdateEncounter(List<CharacterUIData> characterUIDataList)
+        {
+            var characterDataList = characterUIDataList.ConvertAll(x => x.ToCharacterData());
+            foreach (var characterData in characterDataList)
+            {
+                //TODO UIData should have a way to get or remember this id
+                characterData.SQLId = _sqlController.GetCharacterByName(characterData.Name).SQLId;
+            }
+
+            CurrentConfiguration.Characters = characterDataList;
+            _sqlController.UpdateCurrentConfiguration(CurrentConfiguration);
+        }
+
         public void TryCreateNewBackground(Action onComplete = null)
         {
             NativeGalleryController.GetImagePathFromGallery(path =>

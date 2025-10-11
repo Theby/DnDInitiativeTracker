@@ -31,29 +31,48 @@ namespace DnDInitiativeTracker.UI
             private set => initiativeInputField.text = value.ToString();
         }
 
+        public CharacterUIData Data { get; private set; }
+
         public event Action<int> OnRemove;
+        public event Action<int, string> OnSelectionChanged;
 
-        public void Initialize(int positionIndex)
+        public void Initialize()
         {
-            PositionIndex = positionIndex;
-
-            characterDropdown.ClearOptions();
+            characterDropdown.onValueChanged.AddListener(CharacterSelectedHandler);
             removeButton.onClick.AddListener(OnRemoveButtonPressedHandler);
+        }
+
+        void OnDestroy()
+        {
+            Data?.Dispose();
         }
 
         public void SetData(CharacterUIData data, List<string> characterNames)
         {
+            Data = data;
+
+            characterDropdown.ClearOptions();
             characterDropdown.AddOptions(characterNames);
 
-            var dropDownIndex = data == null ? 0 : characterDropdown.options.FindIndex(x => x.text == data.Name);
+            var dropDownIndex = Data == null ? 0 : characterDropdown.options.FindIndex(x => x.text == Data.Name);
             characterDropdown.value = dropDownIndex;
 
-            Initiative = data?.Initiative ?? 0;
+            Initiative = Data?.Initiative ?? 0;
         }
 
         void SetPositionLabel(int positionIndex)
         {
             positionLabel.text = positionIndex.ToString();
+        }
+
+        void CharacterSelectedHandler(int index)
+        {
+            var characterName = characterDropdown.options[index].text;
+            if (Data != null && Data.Name == characterName)
+                return;
+
+            var layoutIndex = PositionIndex - 1;
+            OnSelectionChanged?.Invoke(layoutIndex, characterName);
         }
 
         void OnRemoveButtonPressedHandler()

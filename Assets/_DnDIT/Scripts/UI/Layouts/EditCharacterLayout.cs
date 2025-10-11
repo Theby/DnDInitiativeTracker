@@ -13,8 +13,6 @@ public class EditCharacterLayout : MonoBehaviour
     [SerializeField] TMP_InputField nameInputField;
     [SerializeField] List<SelectAudioLayout> audioLayouts;
 
-    public string CharacterName => nameInputField.text;
-
     public event Action OnChangeImage;
     public event Action<string> OnNameChanged;
     public event Action<int> OnAddNewAudio;
