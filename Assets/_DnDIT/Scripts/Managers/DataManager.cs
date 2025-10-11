@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using DnDInitiativeTracker.Controller;
 using DnDInitiativeTracker.GameData;
 using DnDInitiativeTracker.UIData;
@@ -39,6 +40,8 @@ namespace DnDInitiativeTracker.Manager
             StopAllCoroutines();
             _sqlController?.Dispose();
         }
+
+        #region Defaults
 
         void AddDefaults()
         {
@@ -100,6 +103,10 @@ namespace DnDInitiativeTracker.Manager
             _sqlController.AddBackground(defaultBackgroundData);
         }
 
+        #endregion
+
+        #region Load Data
+
         IEnumerator LoadData()
         {
             IsLoaded = false;
@@ -143,7 +150,7 @@ namespace DnDInitiativeTracker.Manager
                 var audioClips = new List<AudioClip>();
                 foreach (var audioData in character.AudioDataList)
                 {
-                    yield return NativeGalleryController.GetAudioClipFromPath(audioData.Path, clip =>
+                    yield return NativeGalleryController.GetAudioClipFromPathAsync(audioData.Path, clip =>
                     {
                         audioClips.Add(clip);
                     });
@@ -176,6 +183,8 @@ namespace DnDInitiativeTracker.Manager
             CurrentBackground = backgroundUIData;
         }
 
+        #endregion
+
         public List<string> GetAllCharacterNames()
         {
             return _sqlController.GetAllCharactersNames();
@@ -186,19 +195,94 @@ namespace DnDInitiativeTracker.Manager
             return _sqlController.GetAllBackgroundNames();
         }
 
+        public List<string> GetAllAudioNames()
+        {
+            return _sqlController.GetAllAudioNames();
+        }
+
+        public void GetAvatarFromGallery(Action<string, Texture> onComplete)
+        {
+            NativeGalleryController.GetImagePathFromGallery(path =>
+            {
+                var texture = NativeGalleryController.GetImageFromPath(path);
+                onComplete?.Invoke(path, texture);
+            });
+        }
+
+        public void GetAudioClipFromGallery(Action<string, AudioClip> onComplete)
+        {
+            NativeGalleryController.GetAudioPathFromGallery(path =>
+            {
+                NativeGalleryController.GetAudioClipFromPath(path, audioClip =>
+                {
+                    onComplete?.Invoke(path, audioClip);
+                });
+            });
+        }
+
+        public void GetAudioClipByName(string audioName, Action<string, AudioClip> onComplete)
+        {
+            var mediaAsset = _sqlController.GetMediaAssetByNameAndType(audioName, "Audio");
+            NativeGalleryController.GetAudioClipFromPath(mediaAsset.Path, audioClip => onComplete?.Invoke(mediaAsset.Path, audioClip));
+        }
+
+        public CharacterData GetCharacterByName(string characterName)
+        {
+            return _sqlController.GetCharacterByName(characterName);
+        }
+
+        public void CreateCharacter(CharacterUIData characterUIData)
+        {
+            var characterData = characterUIData.ToCharacterData();
+            _sqlController.AddCharacter(characterData);
+        }
+
+        public void UpdateCharacter(CharacterUIData characterUIData)
+        {
+            var characterData = characterUIData.ToCharacterData();
+            _sqlController.UpdateCharacter(characterData);
+        }
+
+        public void CreateCharacterUIData(CharacterData characterData, Action<CharacterUIData> onComplete)
+        {
+            CreateCharacterUIDataAsync(characterData, onComplete);
+        }
+
+        public async Task CreateCharacterUIDataAsync(CharacterData characterData, Action<CharacterUIData> onComplete)
+        {
+            List<AudioClip> audioClips = new();
+            foreach (var audioData in characterData.AudioDataList)
+            {
+                var audioClip = await NativeGalleryController.GetAudioClipFromPathAsync(audioData.Path);
+                audioClips.Add(audioClip);
+            }
+
+            var characterUIData = new CharacterUIData
+            {
+                AvatarTexture = NativeGalleryController.GetImageFromPath(characterData.AvatarData.Path),
+                AvatarPath = characterData.AvatarData.Path,
+                Name = characterData.Name,
+                AudioClips = audioClips,
+                AudioClipPaths = characterData.AudioDataList.ConvertAll(x => x.Path),
+                Initiative = characterData.Initiative,
+            };
+
+            onComplete?.Invoke(characterUIData);
+        }
+
         public void TryCreateNewBackground(Action onComplete = null)
         {
             NativeGalleryController.GetImagePathFromGallery(path =>
             {
                 NativeGalleryController.SaveImageToGallery(path, (fullPath, fileName) =>
                 {
-                    CreateNewBackground(fullPath, fileName);
+                    CreateNewCurrentBackground(fullPath, fileName);
                     onComplete?.Invoke();
                 });
             });
         }
 
-        void CreateNewBackground(string fullPath, string fileName)
+        void CreateNewCurrentBackground(string fullPath, string fileName)
         {
             var backgroundData = new BackgroundData
             {
@@ -212,6 +296,7 @@ namespace DnDInitiativeTracker.Manager
             backgroundData.SQLId = _sqlController.AddBackground(backgroundData);
 
             CurrentConfiguration.Background = backgroundData;
+            _sqlController.UpdateCurrentConfiguration(CurrentConfiguration);
             LoadBackgroundUIData();
 
             OnDataUpdated?.Invoke();
@@ -221,6 +306,7 @@ namespace DnDInitiativeTracker.Manager
         {
             var backgroundData = _sqlController.GetBackgroundByName(bgName);
             CurrentConfiguration.Background = backgroundData;
+            _sqlController.UpdateCurrentConfiguration(CurrentConfiguration);
             LoadBackgroundUIData();
 
             OnDataUpdated?.Invoke();

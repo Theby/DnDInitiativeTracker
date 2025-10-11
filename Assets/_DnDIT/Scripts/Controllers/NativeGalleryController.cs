@@ -46,6 +46,9 @@ namespace DnDInitiativeTracker.Controller
 
         public static Texture2D GetImageFromPath(string path)
         {
+            if (string.IsNullOrEmpty(path))
+                return null;
+
             var texture = NativeGallery.LoadImageAtPath(path);
             if (texture == null)
                 return null;
@@ -76,7 +79,18 @@ namespace DnDInitiativeTracker.Controller
             NativeGallery.GetAudioFromGallery(onComplete.Invoke);
         }
 
-        public static async Task GetAudioClipFromPath(string path, Action<AudioClip> onComplete = null)
+        public static void GetAudioClipFromPath(string path, Action<AudioClip> onComplete = null)
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                onComplete?.Invoke(null);
+                return;
+            }
+
+            GetAudioClipFromPathAsync(path, onComplete);
+        }
+
+        public static async Task<AudioClip> GetAudioClipFromPathAsync(string path, Action<AudioClip> onComplete = null)
         {
             var uri = new Uri(path);
             var audioType = GetAudioType(path);
@@ -87,7 +101,14 @@ namespace DnDInitiativeTracker.Controller
             var audioClip = www.result is not UnityWebRequest.Result.Success
                 ? null
                 : DownloadHandlerAudioClip.GetContent(www);
+
+            if (audioClip != null)
+            {
+                audioClip.name = Path.GetFileNameWithoutExtension(path);
+            }
+
             onComplete?.Invoke(audioClip);
+            return audioClip;
         }
 
         static AudioType GetAudioType(string path)

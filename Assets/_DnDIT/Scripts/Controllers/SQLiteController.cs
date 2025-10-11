@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using DnDInitiativeTracker.GameData;
@@ -59,9 +58,10 @@ namespace DnDInitiativeTracker.Controller
             return mediaAsset;
         }
 
-        public MediaAssetData GetMediaAssetByType(string type)
+        public MediaAssetData GetMediaAssetByNameAndType(string name, string type)
         {
-            var sqlData = _sqLiteService.GetBy<MediaAssetSQLData>(x => x.Type == type);
+            var sqlDataList = _sqLiteService.GetAllBy<MediaAssetSQLData>(m => m.Type == type);
+            var sqlData = sqlDataList.FirstOrDefault(m => m.Name == name);
             if (sqlData == null)
                 return null;
 
@@ -73,6 +73,12 @@ namespace DnDInitiativeTracker.Controller
         {
             var data = _sqLiteService.GetAllBy<MediaAssetSQLData>(m => m.Type == type);
             return data.Select(CreateMediaAssetData).ToDictionary(m => m.Name);
+        }
+
+        public List<string> GetAllAudioNames()
+        {
+            var audioDataList = _sqLiteService.GetAllBy<MediaAssetSQLData>(m => m.Type == "Audio");
+            return audioDataList.Select(a => a.Name).ToList();
         }
 
         MediaAssetData CreateMediaAssetData(MediaAssetSQLData sqlData)
@@ -87,6 +93,35 @@ namespace DnDInitiativeTracker.Controller
 
         public void AddCharacter(CharacterData character)
         {
+            var avatarAsset = GetMediaAssetByNameAndType(character.AvatarData.Name, "Image");
+            if (avatarAsset == null)
+            {
+                var avatarSQLData = character.AvatarData.ToSQLData();
+                _sqLiteService.Insert(avatarSQLData);
+
+                character.AvatarData.SQLId = avatarSQLData.Id;
+            }
+            else
+            {
+                character.AvatarData.SQLId = avatarAsset.SQLId;
+            }
+
+            foreach (var audioData in character.AudioDataList)
+            {
+                var audioAsset = GetMediaAssetByNameAndType(audioData.Name, "Audio");
+                if (audioAsset == null)
+                {
+                    var audioSQLData = audioData.ToSQLData();
+                    _sqLiteService.Insert(audioSQLData);
+
+                    audioData.SQLId = audioSQLData.Id;
+                }
+                else
+                {
+                    audioData.SQLId = audioAsset.SQLId;
+                }
+            }
+
             var characterSQL = character.ToSQLData();
             _sqLiteService.Insert(characterSQL);
         }
@@ -94,6 +129,16 @@ namespace DnDInitiativeTracker.Controller
         public CharacterData GetCharacterById(int id)
         {
             var sqlData = _sqLiteService.GetById<CharacterSQLData>(id);
+            if (sqlData == null)
+                return null;
+
+            var character = CreateCharacterData(sqlData);
+            return character;
+        }
+
+        public CharacterData GetCharacterByName(string name)
+        {
+            var sqlData = _sqLiteService.GetBy<CharacterSQLData>(c => c.Name == name);
             if (sqlData == null)
                 return null;
 
@@ -115,6 +160,35 @@ namespace DnDInitiativeTracker.Controller
 
         public void UpdateCharacter(CharacterData character)
         {
+            var avatarAsset = GetMediaAssetByNameAndType(character.AvatarData.Name, "Image");
+            if (avatarAsset == null)
+            {
+                var avatarSQLData = character.AvatarData.ToSQLData();
+                _sqLiteService.Insert(avatarSQLData);
+
+                character.AvatarData.SQLId = avatarSQLData.Id;
+            }
+            else
+            {
+                character.AvatarData.SQLId = avatarAsset.SQLId;
+            }
+
+            foreach (var audioData in character.AudioDataList)
+            {
+                var audioAsset = GetMediaAssetByNameAndType(audioData.Name, "Audio");
+                if (audioAsset == null)
+                {
+                    var audioSQLData = audioData.ToSQLData();
+                    _sqLiteService.Insert(audioSQLData);
+
+                    audioData.SQLId = audioSQLData.Id;
+                }
+                else
+                {
+                    audioData.SQLId = audioAsset.SQLId;
+                }
+            }
+
             var sqlData = character.ToSQLData();
             _sqLiteService.Update(sqlData);
         }
