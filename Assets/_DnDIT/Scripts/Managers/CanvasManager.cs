@@ -1,3 +1,4 @@
+using DnDInitiativeTracker.ScreenManager;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,11 +11,23 @@ namespace DnDInitiativeTracker.Manager
         [Header("UI")]
         [SerializeField] RawImage background;
         [SerializeField] DMScreenManager dmScreenManager;
+        [SerializeField] PlayersScreenManager playersScreenManager;
 
         public void Initialize()
         {
             dmScreenManager.Initialize();
+            dmScreenManager.OnGoBack += ShowPlayersScreen;
+
+            playersScreenManager.Initialize();
+            playersScreenManager.OnEditEncounter += ShowDMScreen;
+
             SetBackground();
+        }
+
+        public void ShowPlayersScreen()
+        {
+            HideScreens();
+            playersScreenManager.Show();
         }
 
         public void ShowDMScreen()
@@ -25,6 +38,7 @@ namespace DnDInitiativeTracker.Manager
 
         void HideScreens()
         {
+            playersScreenManager.Hide();
             dmScreenManager.Hide();
         }
 

@@ -17,7 +17,7 @@ namespace DnDInitiativeTracker.Manager
 
             canvasManager.Initialize();
 
-            canvasManager.ShowDMScreen();
+            canvasManager.ShowPlayersScreen();
         }
     }
 }

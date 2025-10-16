@@ -19,7 +19,8 @@ namespace DnDInitiativeTracker.UI
         [SerializeField] Button createCharacterButton;
         [SerializeField] Button editCharacterButton;
         [SerializeField] Button changeBGButton;
-        [Header("UI")]
+        [SerializeField] Button backButton;
+        [Header("Events")]
         [SerializeField] UnityEvent onAddMore;
         [SerializeField] UnityEvent onRefresh;
         [SerializeField] UnityEvent<int, string> onCharacterSelected;
@@ -27,6 +28,7 @@ namespace DnDInitiativeTracker.UI
         [SerializeField] UnityEvent onCreateCharacter;
         [SerializeField] UnityEvent onEditCharacter;
         [SerializeField] UnityEvent onChangeBG;
+        [SerializeField] UnityEvent onBack;
 
         DMScreenData _data;
         List<CharacterInitiativeLayout> _layoutList = new();
@@ -40,6 +42,7 @@ namespace DnDInitiativeTracker.UI
             createCharacterButton.onClick.AddListener(onCreateCharacter.Invoke);
             editCharacterButton.onClick.AddListener(onEditCharacter.Invoke);
             changeBGButton.onClick.AddListener(onChangeBG.Invoke);
+            backButton.onClick.AddListener(onBack.Invoke);
         }
 
         public void SetData(DMScreenData data)
