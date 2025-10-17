@@ -49,7 +49,18 @@ namespace DnDInitiativeTracker.Controller
             if (string.IsNullOrEmpty(path))
                 return null;
 
-            var texture = NativeGallery.LoadImageAtPath(path);
+            Texture2D texture;
+
+            try
+            {
+                texture = NativeGallery.LoadImageAtPath(path);
+            }
+            catch (Exception e)
+            {
+                texture = null;
+                Debug.LogError(e.Message);
+            }
+
             if (texture == null)
                 return null;
 
