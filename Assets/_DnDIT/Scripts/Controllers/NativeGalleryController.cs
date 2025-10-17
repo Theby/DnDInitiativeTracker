@@ -123,7 +123,7 @@ namespace DnDInitiativeTracker.Controller
         {
             var fullPath = path;
             var currentFileName = Path.GetFileNameWithoutExtension(path);
-            NativeGallery.SaveAudioToGallery(fullPath, AlbumName, currentFileName, (success, s) =>
+            NativeGallery.SaveAudioToGallery(fullPath, AlbumName, currentFileName, (success, savePath) =>
             {
 #if UNITY_EDITOR
                 onComplete?.Invoke(fullPath, currentFileName);

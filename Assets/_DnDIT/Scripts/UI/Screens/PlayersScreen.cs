@@ -106,6 +106,8 @@ namespace DnDInitiativeTracker.UI
             startButton.gameObject.SetActive(true);
             nextButton.gameObject.SetActive(false);
             stopButton.gameObject.SetActive(false);
+
+            scrollRect.verticalNormalizedPosition = 1.0f;
         }
 
         public void SetFightState()
@@ -113,6 +115,8 @@ namespace DnDInitiativeTracker.UI
             startButton.gameObject.SetActive(false);
             nextButton.gameObject.SetActive(true);
             stopButton.gameObject.SetActive(true);
+
+            scrollRect.verticalNormalizedPosition = 1.0f;
         }
 
         public void SelectNextCharacter()
@@ -125,6 +129,7 @@ namespace DnDInitiativeTracker.UI
             _layoutList.RemoveAt(0);
 
             layout.transform.SetAsLastSibling();
+            scrollRect.verticalNormalizedPosition = 1.0f;
         }
 
         public AudioClip GetFirstCharacterAudioClip()
