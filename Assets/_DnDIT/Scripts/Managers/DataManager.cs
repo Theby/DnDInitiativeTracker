@@ -22,8 +22,6 @@ namespace DnDInitiativeTracker.Manager
 
         public bool IsLoaded { get; private set; }
 
-        public event Action OnDataUpdated;
-
         SQLiteController _sqlController;
 
         public IEnumerator Initialize()
@@ -279,6 +277,7 @@ namespace DnDInitiativeTracker.Manager
                 characterData.SQLId = _sqlController.GetCharacterByName(characterData.Name).SQLId;
             }
 
+            CurrentEncounter = characterUIDataList;
             CurrentConfiguration.Characters = characterDataList;
             _sqlController.UpdateCurrentConfiguration(CurrentConfiguration);
         }
@@ -311,8 +310,6 @@ namespace DnDInitiativeTracker.Manager
             CurrentConfiguration.Background = backgroundData;
             _sqlController.UpdateCurrentConfiguration(CurrentConfiguration);
             LoadBackgroundUIData();
-
-            OnDataUpdated?.Invoke();
         }
 
         public void UpdateCurrentBackground(string bgName)
@@ -321,8 +318,6 @@ namespace DnDInitiativeTracker.Manager
             CurrentConfiguration.Background = backgroundData;
             _sqlController.UpdateCurrentConfiguration(CurrentConfiguration);
             LoadBackgroundUIData();
-
-            OnDataUpdated?.Invoke();
         }
     }
 }

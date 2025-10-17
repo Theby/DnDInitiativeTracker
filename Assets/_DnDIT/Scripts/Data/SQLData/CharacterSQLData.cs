@@ -11,12 +11,13 @@ namespace DnDInitiativeTracker.SQLData
         long InputDate,
         [property: Column("avatarMediaAssetId")] int AvatarMediaAssetId,
         [property: Column("name")] string Name,
-        [property: Column("audioMediaAssetIds")] string AudioMediaAssetIds) : SQLiteData(Id, Enabled, InputDate)
+        [property: Column("audioMediaAssetIds")] string AudioMediaAssetIds,
+        [property: Column("initiative")] int Initiative) : SQLiteData(Id, Enabled, InputDate)
     {
         int[] _audioAssetIdList = null;
         public int[] AudioAssetIdList => _audioAssetIdList ??= GetAudioAssetIds();
 
-        public CharacterSQLData() : this(0, true, DateTime.Now.Ticks, 0, string.Empty, "0")
+        public CharacterSQLData() : this(0, true, DateTime.Now.Ticks, 0, string.Empty, "0", 0)
         {
         }
 

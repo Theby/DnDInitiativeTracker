@@ -42,10 +42,11 @@ namespace DnDInitiativeTracker.UI
             removeButton.onClick.AddListener(OnRemoveButtonPressedHandler);
         }
 
-        void OnDestroy()
-        {
-            Data?.Dispose();
-        }
+        //TODO UI should not clear data
+        // void OnDestroy()
+        // {
+        //     Data?.Dispose();
+        // }
 
         public void SetData(CharacterUIData data, List<string> characterNames)
         {

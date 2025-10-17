@@ -32,10 +32,6 @@ namespace DnDInitiativeTracker.ScreenManager
             createCharacterPopup.Initialize();
             editCharacterPopup.Initialize();
             changeBGPopup.Initialize();
-
-            //maybe not necessary, check how popups handle the call to refresh
-            //so far only change bg uses this
-            dataManager.OnDataUpdated += Refresh;
         }
 
         void OnDestroy()
@@ -146,6 +142,7 @@ namespace DnDInitiativeTracker.ScreenManager
             //TODO Maybe Encounter, Audio and Avatar should be its own SQL Class like Background
             var updatedEncounter = dmScreen.GetEncounter();
             dataManager.UpdateEncounter(updatedEncounter);
+            RefreshData();
         }
 
         void CharacterEncounterSelected(int layoutIndex, string characterName)
@@ -160,6 +157,7 @@ namespace DnDInitiativeTracker.ScreenManager
 
                 var updatedEncounter = dmScreen.GetEncounter();
                 dataManager.UpdateEncounter(updatedEncounter);
+                RefreshData();
             });
         }
 
@@ -169,6 +167,7 @@ namespace DnDInitiativeTracker.ScreenManager
 
             var updatedEncounter = dmScreen.GetEncounter();
             dataManager.UpdateEncounter(updatedEncounter);
+            RefreshData();
         }
 
         void ChangeEditableCharacterAvatar()
@@ -297,12 +296,16 @@ namespace DnDInitiativeTracker.ScreenManager
                 return;
 
             dataManager.UpdateCurrentBackground(bgName);
+
+            Refresh();
         }
 
         void AddNewBackground()
         {
             //TODO show loader and stop on complete
             dataManager.TryCreateNewBackground();
+
+            Refresh();
         }
 
         void GoBack()

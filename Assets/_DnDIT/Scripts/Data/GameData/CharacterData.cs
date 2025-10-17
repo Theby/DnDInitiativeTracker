@@ -36,7 +36,8 @@ namespace DnDInitiativeTracker.GameData
                 InputDate,
                 AvatarData?.SQLId ?? 0,
                 Name,
-                audioIdList
+                audioIdList,
+                Initiative
             );
         }
     }
