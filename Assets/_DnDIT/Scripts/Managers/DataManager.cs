@@ -202,8 +202,12 @@ namespace DnDInitiativeTracker.Manager
         {
             NativeGalleryController.GetImagePathFromGallery(path =>
             {
-                var texture = NativeGalleryController.GetImageFromPath(path);
-                onComplete?.Invoke(path, texture);
+                NativeGalleryController.SaveImageToGallery(path, (fullPath, fileName) =>
+                {
+                    var texture = NativeGalleryController.GetImageFromPath(fullPath);
+                    texture.name = fileName;
+                    onComplete?.Invoke(fullPath, texture);
+                });
             });
         }
 
@@ -211,9 +215,12 @@ namespace DnDInitiativeTracker.Manager
         {
             NativeGalleryController.GetAudioPathFromGallery(path =>
             {
-                NativeGalleryController.GetAudioClipFromPath(path, audioClip =>
+                NativeGalleryController.SaveAudioToGallery(path, (fullPath, fileName) =>
                 {
-                    onComplete?.Invoke(path, audioClip);
+                    NativeGalleryController.GetAudioClipFromPath(fullPath, audioClip =>
+                    {
+                        onComplete?.Invoke(fullPath, audioClip);
+                    });
                 });
             });
         }
