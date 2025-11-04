@@ -10,16 +10,16 @@ namespace DnDInitiativeTracker.Manager
         [SerializeField] DataManager dataManager;
         [Header("UI")]
         [SerializeField] RawImage background;
-        [SerializeField] DMScreenManager dmScreenManager;
-        [SerializeField] PlayersScreenManager playersScreenManager;
+        [SerializeField] DMScreenPresenter dmScreenPresenter;
+        [SerializeField] PlayersScreenPresenter playersScreenPresenter;
 
         public void Initialize()
         {
-            dmScreenManager.Initialize();
-            dmScreenManager.OnGoBack += ShowPlayersScreen;
+            dmScreenPresenter.Initialize();
+            dmScreenPresenter.OnGoBack += ShowPlayersScreen;
 
-            playersScreenManager.Initialize();
-            playersScreenManager.OnEditEncounter += ShowDMScreen;
+            playersScreenPresenter.Initialize();
+            playersScreenPresenter.OnEditEncounter += ShowDMScreen;
 
             SetBackground();
         }
@@ -27,19 +27,19 @@ namespace DnDInitiativeTracker.Manager
         public void ShowPlayersScreen()
         {
             HideScreens();
-            playersScreenManager.Show();
+            playersScreenPresenter.Show();
         }
 
         public void ShowDMScreen()
         {
             HideScreens();
-            dmScreenManager.Show();
+            dmScreenPresenter.Show();
         }
 
         void HideScreens()
         {
-            playersScreenManager.Hide();
-            dmScreenManager.Hide();
+            playersScreenPresenter.Hide();
+            dmScreenPresenter.Hide();
         }
 
         void SetBackground()

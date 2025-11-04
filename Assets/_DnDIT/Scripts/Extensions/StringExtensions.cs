@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using DnDInitiativeTracker.GameData;
 
 namespace DnDInitiativeTracker.Extensions
 {

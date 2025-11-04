@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace DnDInitiativeTracker.ScreenManager
 {
-    public class PlayersScreenManager : MonoBehaviour
+    public class PlayersScreenPresenter : MonoBehaviour
     {
         [Header("Data")]
         [SerializeField] DataManager dataManager;

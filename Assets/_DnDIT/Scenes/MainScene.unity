@@ -4127,8 +4127,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   dataManager: {fileID: 2049405835}
   background: {fileID: 965296748}
-  dmScreenManager: {fileID: 993586434}
-  playersScreenManager: {fileID: 1975616819}
+  dmScreenPresenter: {fileID: 993586434}
+  playersScreenPresenter: {fileID: 1975616819}
 --- !u!4 &874391753
 Transform:
   m_ObjectHideFlags: 0

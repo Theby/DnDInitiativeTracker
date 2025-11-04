@@ -8,7 +8,7 @@ using UnityEngine.UI;
 
 namespace DnDInitiativeTracker.ScreenManager
 {
-    public class DMScreenManager : MonoBehaviour
+    public class DMScreenPresenter : MonoBehaviour
     {
         [Header("Data")]
         [SerializeField] DataManager dataManager;
