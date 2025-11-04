@@ -38,13 +38,13 @@ public class EditCharacterLayout : MonoBehaviour
 
     public void SetData(CharacterUIData data, List<string> audioClipNames)
     {
-        avatarImage.texture = data.AvatarTexture;
+        avatarImage.texture = data.Avatar.AvatarTexture;
         nameInputField.text = string.IsNullOrEmpty(nameInputField.text) ? data.Name : nameInputField.text;
 
         for (var i = 0; i < audioLayouts.Count; i++)
         {
             var audioClip = data.AudioClips?.ElementAtOrDefault(i);
-            var audioClipName = audioClip?.name ?? string.Empty;
+            var audioClipName = audioClip?.Name ?? string.Empty;
 
             var selectAudioLayout = audioLayouts[i];
             selectAudioLayout.SetData(audioClipName, audioClipNames);

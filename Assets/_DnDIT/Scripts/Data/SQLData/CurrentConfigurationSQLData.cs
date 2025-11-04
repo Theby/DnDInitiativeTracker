@@ -1,7 +1,6 @@
 using System;
-using System.Linq;
+using DnDInitiativeTracker.Extensions;
 using SQLite;
-using UnityEngine;
 
 namespace DnDInitiativeTracker.SQLData
 {
@@ -11,23 +10,18 @@ namespace DnDInitiativeTracker.SQLData
         bool Enabled,
         long InputDate,
         [property: Column("characterIds")] string CharacterIds,
+        [property: Column("initiativeOrder")] string InitiativeOrder,
         [property: Column("backgroundId")] int BackgroundId) : SQLiteData(Id, Enabled, InputDate)
     {
 
         int[] _characterIdList = null;
-        public int[] CharacterIdList => _characterIdList ??= GetCharacterIds();
+        public int[] CharacterIdList => _characterIdList ??= CharacterIds.ToIntegerArray();
 
-        public CurrentConfigurationSQLData() : this(0, true, DateTime.Now.Ticks, "0", 0)
+        int[] _initiativeList = null;
+        public int[] InitiativeList => _initiativeList ??= InitiativeOrder.ToIntegerArray();
+
+        public CurrentConfigurationSQLData() : this(0, true, DateTime.Now.Ticks, "0", "0", 0)
         {
-        }
-
-        int[] GetCharacterIds()
-        {
-            if (string.IsNullOrEmpty(CharacterIds))
-                return Array.Empty<int>();
-
-            var splitIds = CharacterIds.Split(',');
-            return splitIds.Select(int.Parse).ToArray();
         }
     }
 }

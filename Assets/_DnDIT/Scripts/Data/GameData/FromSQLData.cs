@@ -3,11 +3,19 @@ using DnDInitiativeTracker.SQLData;
 
 namespace DnDInitiativeTracker.GameData
 {
-    public abstract class FromSQLData<T> where T : SQLiteData
+    public abstract class FromSQLData
     {
-        public int SQLId { get; set; }
-        public bool Enabled { get; set; }
-        public long InputDate { get; set; }
+        public abstract int SQLId { get; set; }
+        public abstract bool Enabled { get; set; }
+        public abstract long InputDate { get; set; }
+    }
+
+    public abstract class FromSQLData<T> : FromSQLData
+        where T : SQLiteData
+    {
+        public sealed override int SQLId { get; set; }
+        public sealed override bool Enabled { get; set; }
+        public sealed override long InputDate { get; set; }
 
         protected FromSQLData()
         {

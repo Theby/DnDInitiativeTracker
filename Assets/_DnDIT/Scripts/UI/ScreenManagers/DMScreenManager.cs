@@ -34,11 +34,6 @@ namespace DnDInitiativeTracker.ScreenManager
             changeBGPopup.Initialize();
         }
 
-        void OnDestroy()
-        {
-            _editableCharacterUIData.Dispose();
-        }
-
         public void Show()
         {
             HidePopups();
@@ -60,7 +55,6 @@ namespace DnDInitiativeTracker.ScreenManager
 
         void ShowEditCharacterPopup()
         {
-            _editableCharacterUIData.Dispose();
             editCharacterPopup.SetData(_editableCharacterUIData, _data);
             editCharacterPopup.Show();
         }
@@ -174,13 +168,13 @@ namespace DnDInitiativeTracker.ScreenManager
         {
             dataManager.GetAvatarFromGallery((fullPath, texture) =>
             {
-                if (_editableCharacterUIData.AvatarTexture != null)
+                if (_editableCharacterUIData.Avatar.AvatarTexture != null)
                 {
-                    Destroy(_editableCharacterUIData.AvatarTexture);
+                    Destroy(_editableCharacterUIData.Avatar.AvatarTexture);
                 }
 
-                _editableCharacterUIData.AvatarTexture = texture;
-                _editableCharacterUIData.AvatarPath = fullPath;
+                _editableCharacterUIData.Avatar.AvatarTexture = texture;
+                _editableCharacterUIData.Avatar.FilePath = fullPath;
 
                 Refresh();
             });
@@ -202,7 +196,7 @@ namespace DnDInitiativeTracker.ScreenManager
         void UpdateEditableCharacterAudioClip(int index, string audioName)
         {
             var currentAudioClip = _editableCharacterUIData.AudioClips.ElementAtOrDefault(index);
-            if (currentAudioClip != null && currentAudioClip.name == audioName)
+            if (currentAudioClip != null && currentAudioClip.Name == audioName)
                 return;
 
             dataManager.GetAudioClipByName(audioName,
@@ -214,15 +208,15 @@ namespace DnDInitiativeTracker.ScreenManager
             var currentClip = _editableCharacterUIData.AudioClips.ElementAtOrDefault(index);
             if (currentClip != null)
             {
-                currentClip.UnloadAudioData();
-                AudioClip.Destroy(currentClip);
+                currentClip.AudioClip.UnloadAudioData();
+                AudioClip.Destroy(currentClip.AudioClip);
             }
 
             //TODO all this editable maybe should be moved somewhere else
             //Also maybe we need some Data that holds the AudioClip/Texture along the MediaAsset
             //consider making UIData classes work like that
-            _editableCharacterUIData.AudioClips[index] = audioClip;
-            _editableCharacterUIData.AudioClipPaths[index] = fullPath;
+            _editableCharacterUIData.AudioClips[index].AudioClip = audioClip;
+            _editableCharacterUIData.AudioClips[index].FilePath = fullPath;
 
             //TODO hackie, we should separate adding an Asset vs selection already added assets.
             //one is the add button with the field to show the path, the other is the dropdown
@@ -241,7 +235,7 @@ namespace DnDInitiativeTracker.ScreenManager
             var audioClip = _editableCharacterUIData.AudioClips.ElementAtOrDefault(index);
             if (audioClip != null)
             {
-                audioSource.PlayOneShot(audioClip);
+                audioSource.PlayOneShot(audioClip.AudioClip);
             }
         }
 

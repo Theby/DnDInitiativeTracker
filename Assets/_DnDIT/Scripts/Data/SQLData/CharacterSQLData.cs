@@ -1,5 +1,5 @@
 using System;
-using System.Linq;
+using DnDInitiativeTracker.Extensions;
 using SQLite;
 
 namespace DnDInitiativeTracker.SQLData
@@ -9,25 +9,15 @@ namespace DnDInitiativeTracker.SQLData
         int Id,
         bool Enabled,
         long InputDate,
-        [property: Column("avatarMediaAssetId")] int AvatarMediaAssetId,
+        [property: Column("avatarId")] int AvatarId,
         [property: Column("name")] string Name,
-        [property: Column("audioMediaAssetIds")] string AudioMediaAssetIds,
-        [property: Column("initiative")] int Initiative) : SQLiteData(Id, Enabled, InputDate)
+        [property: Column("audioIds")] string AudioIds) : SQLiteData(Id, Enabled, InputDate)
     {
-        int[] _audioAssetIdList = null;
-        public int[] AudioAssetIdList => _audioAssetIdList ??= GetAudioAssetIds();
+        int[] _audioIdList = null;
+        public int[] AudioIdList => _audioIdList ??= AudioIds.ToIntegerArray();
 
-        public CharacterSQLData() : this(0, true, DateTime.Now.Ticks, 0, string.Empty, "0", 0)
+        public CharacterSQLData() : this(0, true, DateTime.Now.Ticks, 0, string.Empty, "0")
         {
-        }
-
-        int[] GetAudioAssetIds()
-        {
-            if (string.IsNullOrEmpty(AudioMediaAssetIds))
-                return Array.Empty<int>();
-
-            var splitIds = AudioMediaAssetIds.Split(',');
-            return splitIds.Select(int.Parse).ToArray();
         }
     }
 }

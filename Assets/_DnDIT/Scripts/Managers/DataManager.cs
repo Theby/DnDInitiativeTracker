@@ -13,16 +13,22 @@ namespace DnDInitiativeTracker.Manager
     public class DataManager : MonoBehaviour
     {
         const int CurrentConfigID = 1;
-        const int DefaultBackgroundID = 1;
-
-        public CurrentConfigurationData CurrentConfiguration { get; private set; }
-
-        public List<CharacterUIData> CurrentEncounter { get; set; }
-        public BackgroundUIData CurrentBackground { get; set; }
 
         public bool IsLoaded { get; private set; }
 
+        //TODO this seems to me like a CurrentConfiguration UI Data
+        public List<CharacterUIData> CurrentEncounter { get; set; }
+        public List<int> InitiativeList { get; set; }
+        public BackgroundUIData CurrentBackground { get; set; }
+
+        CurrentConfigurationData CurrentConfiguration { get; set; }
+
         SQLiteController _sqlController;
+        int _defaultAvatarID;
+        int _defaultAudio1Id;
+        int _defaultAudio2Id;
+        int _defaultAudio3Id;
+        int _defaultBackgroundID;
 
         public IEnumerator Initialize()
         {
@@ -44,7 +50,8 @@ namespace DnDInitiativeTracker.Manager
         void AddDefaults()
         {
             AddDefaultMediaAssets();
-            AddDefaultBackground();
+            AddDefaultCharacter();
+            AddDefaultCurrentConfiguration();
         }
 
         void AddDefaultMediaAssets()
@@ -55,50 +62,77 @@ namespace DnDInitiativeTracker.Manager
             var defaultAvatarData = new MediaAssetData
             {
                 Name = "DefaultAvatar",
-                Type = NativeGallery.MediaType.Image,
+                Type = MediaAssetType.Avatar,
                 Path = Path.Combine(Application.streamingAssetsPath, "Textures/DefaultAvatar.jpg")
             };
             var defaultAudio1Data = new MediaAssetData
             {
                 Name = "DefaultAudio1",
-                Type = NativeGallery.MediaType.Audio,
+                Type = MediaAssetType.Audio,
                 Path = Path.Combine(Application.streamingAssetsPath, "Audios/DefaultAudio1.mp3")
             };
             var defaultAudio2Data = new MediaAssetData
             {
                 Name = "DefaultAudio2",
-                Type = NativeGallery.MediaType.Audio,
+                Type = MediaAssetType.Audio,
                 Path = Path.Combine(Application.streamingAssetsPath, "Audios/DefaultAudio2.mp3")
             };
             var defaultAudio3Data = new MediaAssetData
             {
                 Name = "DefaultAudio3",
-                Type = NativeGallery.MediaType.Audio,
+                Type = MediaAssetType.Audio,
                 Path = Path.Combine(Application.streamingAssetsPath, "Audios/DefaultAudio3.mp3")
             };
-
-            _sqlController.AddMediaAsset(defaultAvatarData);
-            _sqlController.AddMediaAsset(defaultAudio1Data);
-            _sqlController.AddMediaAsset(defaultAudio2Data);
-            _sqlController.AddMediaAsset(defaultAudio3Data);
-        }
-
-        void AddDefaultBackground()
-        {
-            if (!_sqlController.IsBackgroundTableEmpty())
-                return;
-
-            var defaultBackgroundData = new BackgroundData
+            var defaultBackground = new MediaAssetData
             {
-                MediaAssetData = new MediaAssetData
-                {
-                    Name = "DefaultBG",
-                    Type = NativeGallery.MediaType.Image,
-                    Path = Path.Combine(Application.streamingAssetsPath, "Textures/DefaultBG.jpg")
-                }
+                Name = "DefaultBG",
+                Type = MediaAssetType.Background,
+                Path = Path.Combine(Application.streamingAssetsPath, "Textures/DefaultBG.jpg")
             };
 
-            _sqlController.AddBackground(defaultBackgroundData);
+            _defaultAvatarID = _sqlController.AddMediaAsset(defaultAvatarData);
+            _defaultAudio1Id = _sqlController.AddMediaAsset(defaultAudio1Data);
+            _defaultAudio2Id = _sqlController.AddMediaAsset(defaultAudio2Data);
+            _defaultAudio3Id = _sqlController.AddMediaAsset(defaultAudio3Data);
+            _defaultBackgroundID = _sqlController.AddMediaAsset(defaultBackground);
+        }
+
+        void AddDefaultCharacter()
+        {
+            if (!_sqlController.IsCharacterTableEmpty())
+                return;
+
+            var defaultAvatar = _sqlController.GetMediaAsset(_defaultAvatarID);
+            var defaultAudios = new List<MediaAssetData>
+            {
+                _sqlController.GetMediaAsset(_defaultAudio1Id),
+                _sqlController.GetMediaAsset(_defaultAudio2Id),
+                _sqlController.GetMediaAsset(_defaultAudio3Id),
+            };
+
+            var defaultCharacter = new CharacterData
+            {
+                Avatar = defaultAvatar,
+                Name = "????",
+                AudioList = defaultAudios,
+            };
+
+            _sqlController.AddCharacter(defaultCharacter);
+        }
+
+        void AddDefaultCurrentConfiguration()
+        {
+            if (!_sqlController.IsCurrentConfigurationTableEmpty())
+                return;
+
+            var defaultBackground = _sqlController.GetMediaAsset(_defaultBackgroundID);
+            var defaultConfig = new CurrentConfigurationData
+            {
+                Characters = new List<CharacterData>(),
+                InitiativeList = new List<int>(),
+                Background = defaultBackground,
+            };
+            _sqlController.AddCurrentConfiguration(defaultConfig);
         }
 
         #endregion
@@ -117,20 +151,7 @@ namespace DnDInitiativeTracker.Manager
 
         void LoadConfigurationData()
         {
-            CurrentConfigurationData config;
-            if (_sqlController.IsCurrentConfigurationTableEmpty())
-            {
-                config = new CurrentConfigurationData
-                {
-                    Background = _sqlController.GetBackgroundById(DefaultBackgroundID)
-                };
-                _sqlController.AddCurrentConfiguration(config);
-            }
-            else
-            {
-                config = _sqlController.GetCurrentConfigurationById(CurrentConfigID);
-            }
-
+            CurrentConfigurationData config = _sqlController.GetCurrentConfigurationById(CurrentConfigID);
             CurrentConfiguration = config;
         }
 
@@ -145,25 +166,37 @@ namespace DnDInitiativeTracker.Manager
             var currentEncounter = new List<CharacterUIData>();
             foreach (var character in CurrentConfiguration.Characters)
             {
-                var audioClips = new List<AudioClip>();
-                foreach (var audioData in character.AudioDataList)
+                var audioClips = new List<AudioUIData>();
+                foreach (var audioData in character.AudioList)
                 {
                     yield return NativeGalleryController.GetAudioClipFromPathAsync(audioData.Path, clip =>
                     {
-                        audioClips.Add(clip);
+                        var audioClip = new AudioUIData
+                        {
+                            Name = audioData.Name,
+                            FilePath = audioData.Path,
+                            AudioClip = clip,
+                        };
+                        audioClips.Add(audioClip);
                     });
                 }
 
                 var characterUIData = new CharacterUIData
                 {
-                    AvatarTexture = NativeGalleryController.GetImageFromPath(character.AvatarData.Path),
+                    Avatar = new AvatarUIData
+                    {
+                        Name = character.Avatar.Name,
+                        FilePath = character.Avatar.Path,
+                        AvatarTexture = NativeGalleryController.GetImageFromPath(character.Avatar.Path)
+                    },
                     Name = character.Name,
                     AudioClips = audioClips,
-                    Initiative = character.Initiative
                 };
                 currentEncounter.Add(characterUIData);
             }
+
             CurrentEncounter = currentEncounter;
+            InitiativeList = CurrentConfiguration.InitiativeList;
         }
 
         void LoadBackgroundUIData()
@@ -176,26 +209,32 @@ namespace DnDInitiativeTracker.Manager
             var backgroundUIData = new BackgroundUIData
             {
                 Name = CurrentConfiguration.Background.Name,
-                BackgroundTexture = NativeGalleryController.GetImageFromPath(CurrentConfiguration.Background.MediaAssetData.Path)
+                FilePath = CurrentConfiguration.Background.Path,
+                BackgroundTexture = NativeGalleryController.GetImageFromPath(CurrentConfiguration.Background.Path)
             };
             CurrentBackground = backgroundUIData;
         }
 
         #endregion
 
-        public List<string> GetAllCharacterNames()
+        public List<string> GetAllAvatarNames()
         {
-            return _sqlController.GetAllCharactersNames();
-        }
-
-        public List<string> GetAllBackgroundNames()
-        {
-            return _sqlController.GetAllBackgroundNames();
+            return _sqlController.GetAllMediaTypeNames(MediaAssetType.Avatar);
         }
 
         public List<string> GetAllAudioNames()
         {
-            return _sqlController.GetAllAudioNames();
+            return _sqlController.GetAllMediaTypeNames(MediaAssetType.Audio);
+        }
+
+        public List<string> GetAllBackgroundNames()
+        {
+            return _sqlController.GetAllMediaTypeNames(MediaAssetType.Background);
+        }
+
+        public List<string> GetAllCharacterNames()
+        {
+            return _sqlController.GetAllCharactersNames();
         }
 
         public void GetAvatarFromGallery(Action<string, Texture> onComplete)
@@ -227,7 +266,7 @@ namespace DnDInitiativeTracker.Manager
 
         public void GetAudioClipByName(string audioName, Action<string, AudioClip> onComplete)
         {
-            var mediaAsset = _sqlController.GetMediaAssetByNameAndType(audioName, "Audio");
+            var mediaAsset = _sqlController.GetMediaAsset((int)MediaAssetType.Audio, audioName);
             NativeGalleryController.GetAudioClipFromPath(mediaAsset.Path, audioClip => onComplete?.Invoke(mediaAsset.Path, audioClip));
         }
 
@@ -255,21 +294,32 @@ namespace DnDInitiativeTracker.Manager
 
         public async Task CreateCharacterUIDataAsync(CharacterData characterData, Action<CharacterUIData> onComplete)
         {
-            List<AudioClip> audioClips = new();
-            foreach (var audioData in characterData.AudioDataList)
+            var avatarUIData = new AvatarUIData
+            {
+                Name = characterData.Avatar.Name,
+                FilePath = characterData.Avatar.Path,
+                AvatarTexture = NativeGalleryController.GetImageFromPath(characterData.Avatar.Path),
+            };
+
+            var audioClips = new List<AudioUIData>();
+            foreach (var audioData in characterData.AudioList)
             {
                 var audioClip = await NativeGalleryController.GetAudioClipFromPathAsync(audioData.Path);
-                audioClips.Add(audioClip);
+
+                var audioUIData = new AudioUIData
+                {
+                    Name = audioData.Name,
+                    FilePath = audioData.Path,
+                    AudioClip = audioClip,
+                };
+                audioClips.Add(audioUIData);
             }
 
             var characterUIData = new CharacterUIData
             {
-                AvatarTexture = NativeGalleryController.GetImageFromPath(characterData.AvatarData.Path),
-                AvatarPath = characterData.AvatarData.Path,
+                Avatar = avatarUIData,
                 Name = characterData.Name,
                 AudioClips = audioClips,
-                AudioClipPaths = characterData.AudioDataList.ConvertAll(x => x.Path),
-                Initiative = characterData.Initiative,
             };
 
             onComplete?.Invoke(characterUIData);
@@ -303,16 +353,13 @@ namespace DnDInitiativeTracker.Manager
 
         void CreateNewCurrentBackground(string fullPath, string fileName)
         {
-            var backgroundData = new BackgroundData
+            var backgroundData = new MediaAssetData
             {
-                MediaAssetData = new MediaAssetData
-                {
-                    Name = fileName,
-                    Type = NativeGallery.MediaType.Image,
-                    Path = fullPath,
-                },
+                Name = fileName,
+                Type = MediaAssetType.Background,
+                Path = fullPath,
             };
-            backgroundData.SQLId = _sqlController.AddBackground(backgroundData);
+            backgroundData.SQLId = _sqlController.AddMediaAsset(backgroundData);
 
             CurrentConfiguration.Background = backgroundData;
             _sqlController.UpdateCurrentConfiguration(CurrentConfiguration);
@@ -321,7 +368,7 @@ namespace DnDInitiativeTracker.Manager
 
         public void UpdateCurrentBackground(string bgName)
         {
-            var backgroundData = _sqlController.GetBackgroundByName(bgName);
+            var backgroundData = _sqlController.GetMediaAsset((int)MediaAssetType.Background, bgName);
             CurrentConfiguration.Background = backgroundData;
             _sqlController.UpdateCurrentConfiguration(CurrentConfiguration);
             LoadBackgroundUIData();

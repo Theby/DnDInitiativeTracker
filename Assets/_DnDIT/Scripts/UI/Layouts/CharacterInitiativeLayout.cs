@@ -58,7 +58,8 @@ namespace DnDInitiativeTracker.UI
             var dropDownIndex = Data == null ? 0 : characterDropdown.options.FindIndex(x => x.text == Data.Name);
             characterDropdown.value = dropDownIndex;
 
-            Initiative = Data?.Initiative ?? 0;
+            //TODO from where are we getting this?
+            Initiative = 0;
         }
 
         void SetPositionLabel(int positionIndex)

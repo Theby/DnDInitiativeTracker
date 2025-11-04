@@ -7,7 +7,7 @@ using UnityEngine.UI;
 
 namespace DnDInitiativeTracker.Test
 {
-    public class Test : MonoBehaviour
+    public class NativeGalleryTest : MonoBehaviour
     {
         [SerializeField] RawImage image;
         [SerializeField] TextMeshProUGUI imagePath;

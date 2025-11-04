@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using DnDInitiativeTracker.GameData;
@@ -29,7 +30,6 @@ namespace DnDInitiativeTracker.Controller
         {
             _sqLiteService.CreateTable<MediaAssetSQLData>();
             _sqLiteService.CreateTable<CharacterSQLData>();
-            _sqLiteService.CreateTable<BackgroundSQLData>();
             _sqLiteService.CreateTable<CurrentConfigurationSQLData>();
         }
 
@@ -48,7 +48,7 @@ namespace DnDInitiativeTracker.Controller
             return mediaAssetSQL.Id;
         }
 
-        public MediaAssetData GetMediaAssetById(int id)
+        public MediaAssetData GetMediaAsset(int id)
         {
             var sqlData = _sqLiteService.GetById<MediaAssetSQLData>(id);
             if (sqlData == null)
@@ -58,10 +58,17 @@ namespace DnDInitiativeTracker.Controller
             return mediaAsset;
         }
 
-        public MediaAssetData GetMediaAssetByNameAndType(string name, string type)
+        public List<MediaAssetData> GetMediaAssets(int type)
         {
-            var sqlDataList = _sqLiteService.GetAllBy<MediaAssetSQLData>(m => m.Type == type);
-            var sqlData = sqlDataList.FirstOrDefault(m => m.Name == name);
+            var data = _sqLiteService.GetAllBy<MediaAssetSQLData>(m => m.Type == type);
+            return data.Select(CreateMediaAssetData).ToList();
+        }
+
+        public MediaAssetData GetMediaAsset(int type, string name)
+        {
+            var sqlData = _sqLiteService.GetTableQuery<MediaAssetSQLData>()
+                .Where(m => m.Type == type)
+                .FirstOrDefault(m => m.Name == name);
             if (sqlData == null)
                 return null;
 
@@ -69,61 +76,43 @@ namespace DnDInitiativeTracker.Controller
             return mediaAsset;
         }
 
-        public Dictionary<string, MediaAssetData> GetMediaAssetsByType(string type)
-        {
-            var data = _sqLiteService.GetAllBy<MediaAssetSQLData>(m => m.Type == type);
-            return data.Select(CreateMediaAssetData).ToDictionary(m => m.Name);
-        }
-
-        public List<string> GetAllAudioNames()
-        {
-            var audioDataList = _sqLiteService.GetAllBy<MediaAssetSQLData>(m => m.Type == "Audio");
-            return audioDataList.Select(a => a.Name).ToList();
-        }
-
         MediaAssetData CreateMediaAssetData(MediaAssetSQLData sqlData)
         {
-            var mediaAsset = new MediaAssetData(sqlData);
+            var name = sqlData.Name;
+            var type = (MediaAssetType)sqlData.Type;
+            var path = sqlData.Path;
+
+            var mediaAsset = new MediaAssetData(sqlData, name, type, path);
             return mediaAsset;
+        }
+
+        public List<string> GetAllMediaTypeNames(MediaAssetType type)
+        {
+            var names =_sqLiteService.GetTableQuery<MediaAssetSQLData>()
+                .Where(m => m.Type == (int)type)
+                .Select(m => m.Name);
+            return names.ToList();
+        }
+
+        public bool ExistsMediaAsset(int id)
+        {
+            var sqlData = _sqLiteService.GetById<MediaAssetSQLData>(id);
+            return sqlData != null;
         }
 
         #endregion
 
         #region Character
 
+        public bool IsCharacterTableEmpty()
+        {
+            return _sqLiteService.IsTableEmpty<CharacterSQLData>();
+        }
+
         public void AddCharacter(CharacterData character)
         {
-            var avatarAsset = GetMediaAssetByNameAndType(character.AvatarData.Name, "Image");
-            if (avatarAsset == null)
-            {
-                var avatarSQLData = character.AvatarData.ToSQLData();
-                _sqLiteService.Insert(avatarSQLData);
-
-                character.AvatarData.SQLId = avatarSQLData.Id;
-            }
-            else
-            {
-                character.AvatarData.SQLId = avatarAsset.SQLId;
-            }
-
-            foreach (var audioData in character.AudioDataList)
-            {
-                var audioAsset = GetMediaAssetByNameAndType(audioData.Name, "Audio");
-                if (audioAsset == null)
-                {
-                    var audioSQLData = audioData.ToSQLData();
-                    _sqLiteService.Insert(audioSQLData);
-
-                    audioData.SQLId = audioSQLData.Id;
-                }
-                else
-                {
-                    audioData.SQLId = audioAsset.SQLId;
-                }
-            }
-
-            var characterSQL = character.ToSQLData();
-            _sqLiteService.Insert(characterSQL);
+            var sqlData = CreateCharacterSQLData(character);
+            _sqLiteService.Insert(sqlData);
         }
 
         public CharacterData GetCharacterById(int id)
@@ -160,107 +149,41 @@ namespace DnDInitiativeTracker.Controller
 
         public void UpdateCharacter(CharacterData character)
         {
-            var avatarAsset = GetMediaAssetByNameAndType(character.AvatarData.Name, "Image");
-            if (avatarAsset == null)
-            {
-                var avatarSQLData = character.AvatarData.ToSQLData();
-                _sqLiteService.Insert(avatarSQLData);
-
-                character.AvatarData.SQLId = avatarSQLData.Id;
-            }
-            else
-            {
-                character.AvatarData.SQLId = avatarAsset.SQLId;
-            }
-
-            foreach (var audioData in character.AudioDataList)
-            {
-                var audioAsset = GetMediaAssetByNameAndType(audioData.Name, "Audio");
-                if (audioAsset == null)
-                {
-                    var audioSQLData = audioData.ToSQLData();
-                    _sqLiteService.Insert(audioSQLData);
-
-                    audioData.SQLId = audioSQLData.Id;
-                }
-                else
-                {
-                    audioData.SQLId = audioAsset.SQLId;
-                }
-            }
-
-            var sqlData = character.ToSQLData();
+            var sqlData = CreateCharacterSQLData(character);
             _sqLiteService.Update(sqlData);
         }
 
         CharacterData CreateCharacterData(CharacterSQLData sqlData)
         {
-            var avatarData = GetMediaAssetById(sqlData.AvatarMediaAssetId);
-            var audioDataList = sqlData.AudioAssetIdList.Select(GetMediaAssetById).ToList();
-            var character = new CharacterData(sqlData, avatarData, audioDataList);
+            var avatarData = GetMediaAsset(sqlData.AvatarId);
+            var name = sqlData.Name;
+            var audioDataList = sqlData.AudioIdList.Select(GetMediaAsset).ToList();
+            var character = new CharacterData(sqlData, avatarData, name, audioDataList);
 
             return character;
         }
 
-        #endregion
-
-        #region Background
-
-        public bool IsBackgroundTableEmpty()
+        CharacterSQLData CreateCharacterSQLData(CharacterData character)
         {
-            return _sqLiteService.IsTableEmpty<BackgroundSQLData>();
-        }
-
-        public int AddBackground(BackgroundData background)
-        {
-            if (background.MediaAssetData.SQLId == 0)
+            var avatarSQLData = character.Avatar.ToSQLData();
+            if (!ExistsMediaAsset(avatarSQLData.Id))
             {
-                var mediaId = AddMediaAsset(background.MediaAssetData);
-                background.MediaAssetData.SQLId = mediaId;
+                _sqLiteService.Insert(avatarSQLData);
+                character.Avatar.SQLId = avatarSQLData.Id;
             }
 
-            var backgroundSQL = background.ToSQLData();
-            _sqLiteService.Insert(backgroundSQL);
+            foreach (var audioData in character.AudioList)
+            {
+                var audioSQLData = audioData.ToSQLData();
+                if (ExistsMediaAsset(audioSQLData.Id))
+                    continue;
 
-            return backgroundSQL.Id;
-        }
+                _sqLiteService.Insert(audioSQLData);
+                audioData.SQLId = audioSQLData.Id;
+            }
 
-        public BackgroundData GetBackgroundById(int id)
-        {
-            var sqlData = _sqLiteService.GetById<BackgroundSQLData>(id);
-            if (sqlData == null)
-                return null;
-
-            var background = CreateBackgroundData(sqlData);
-            return background;
-        }
-
-        public BackgroundData GetBackgroundByName(string name)
-        {
-            var mediaAsset = _sqLiteService.GetBy<MediaAssetSQLData>(m => m.Name == name);
-            if (mediaAsset == null)
-                return null;
-
-            var sqlData = _sqLiteService.GetBy<BackgroundSQLData>(b => b.MediaAssetId == mediaAsset.Id);
-            if (sqlData == null)
-                return null;
-
-            return CreateBackgroundData(sqlData);
-        }
-
-        public List<string> GetAllBackgroundNames()
-        {
-            var mediaIds = _sqLiteService.GetTableQuery<BackgroundSQLData>().Select(b => b.MediaAssetId);
-            var names = _sqLiteService.GetAllBy<MediaAssetSQLData>(m => mediaIds.Contains(m.Id)).Select(m => m.Name);
-            return names.ToList();
-        }
-
-        BackgroundData CreateBackgroundData(BackgroundSQLData sqlData)
-        {
-            var mediaAssetData = GetMediaAssetById(sqlData.MediaAssetId);
-            var background = new BackgroundData(sqlData, mediaAssetData);
-
-            return background;
+            var sqlData = character.ToSQLData();
+            return sqlData;
         }
 
         #endregion
@@ -285,8 +208,9 @@ namespace DnDInitiativeTracker.Controller
                 return null;
 
             var characterDataList = sqlData.CharacterIdList.Select(GetCharacterById).ToList();
-            var backgroundData = GetBackgroundById(sqlData.BackgroundId);
-            var config = new CurrentConfigurationData(sqlData, characterDataList, backgroundData);
+            var initiativeList = sqlData.InitiativeList.ToList();
+            var backgroundData = GetMediaAsset(sqlData.BackgroundId);
+            var config = new CurrentConfigurationData(sqlData, characterDataList, initiativeList, backgroundData);
 
             return config;
         }

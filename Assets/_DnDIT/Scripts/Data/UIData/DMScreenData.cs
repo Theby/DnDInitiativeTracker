@@ -5,6 +5,7 @@ namespace DnDInitiativeTracker.UIData
     public class DMScreenData
     {
         public List<CharacterUIData> CurrentEncounter { get; set; } = new();
+        public List<int> InitiativeList { get; set; } = new();
         public BackgroundUIData CurrentBackground { get; set; }
 
         public List<string> CharacterNames { get; set; } = new();
