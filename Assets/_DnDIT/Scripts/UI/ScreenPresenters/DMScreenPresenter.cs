@@ -278,25 +278,33 @@ namespace DnDInitiativeTracker.ScreenManager
             //TODO should clear and destroy data after this?
         }
 
-        void SelectBackgroundFromIndex(int index)
-        {
-            //consider getting the name from the dropdown instead of index
-            if (_data.BackgroundNames.Count <= index)
-                return;
-
-            var bgName = _data.BackgroundNames[index];
-            if (_data.CurrentConfigurationUIData.CurrentBackground.Name == bgName)
-                return;
-
-            //TODO dataManager.UpdateCurrentBackground(bgName);
-
-            Refresh();
-        }
-
         void AddNewBackground()
         {
-            //TODO show loader and stop on complete
-            //TODO dataManager.TryCreateNewBackground();
+            //TODO when to dispose the loaded texture?
+            dataManager.GetTextureFromGallery(MediaAssetType.Background, textureUIData =>
+            {
+               changeBGPopup.ShowNewBackground(textureUIData);
+            });
+        }
+
+        void RemoveNewBackground(string bgName)
+        {
+            SelectBackground(bgName);
+        }
+
+        void SelectBackground(string bgName)
+        {
+            //TODO when to dispose the loaded texture?
+            var previewTexture = dataManager.GetTextureFromDataBase(bgName, MediaAssetType.Background);
+            changeBGPopup.ShowDropDown(previewTexture);
+        }
+
+        void ApplyBackground(TextureUIData backgroundUIData)
+        {
+            changeBGPopup.Hide();
+            
+            _data.CurrentConfigurationUIData.CurrentBackground = backgroundUIData;
+            dataManager.UpdateCurrentConfiguration(_data.CurrentConfigurationUIData);
 
             Refresh();
         }
@@ -305,6 +313,39 @@ namespace DnDInitiativeTracker.ScreenManager
         {
             OnGoBack?.Invoke();
         }
+
+        #region Main Inspector Handlers
+
+        public void ChangeBGButtonInspectorHandler()
+        {
+            ShowChangeBGPopup();
+        }
+
+        #endregion
+
+        #region ChangeBGPopup Inspector Handlers
+
+        public void AddNewBackgroundButtonInspectorHandler()
+        {
+            AddNewBackground();
+        }
+
+        public void RemoveNewBackgroundButtonInspectorHandler(string bgName)
+        {
+            RemoveNewBackground(bgName);
+        }
+
+        public void BackgroundSelectionDropdownInspectorHandler(string bgName)
+        {
+            SelectBackground(bgName);
+        }
+
+        public void ApplyBackgroundButtonInspectorHandler(TextureUIData backgroundUIData)
+        {
+            ApplyBackground(backgroundUIData);
+        }
+
+        #endregion
 
         #region Inspector Handlers
 
@@ -336,11 +377,6 @@ namespace DnDInitiativeTracker.ScreenManager
         public void EditCharacterButtonInspectorHandler()
         {
             ShowEditCharacterPopup();
-        }
-
-        public void ChangeBGButtonInspectorHandler()
-        {
-            ShowChangeBGPopup();
         }
 
         public void ChangeImageButtonInspectorHandler()
@@ -381,16 +417,6 @@ namespace DnDInitiativeTracker.ScreenManager
         public void UpdateCharacterButtonInspectorHandler()
         {
             UpdateCharacter();
-        }
-
-        public void BackgroundSelectionDropdownInspectorHandler(int index)
-        {
-            SelectBackgroundFromIndex(index);
-        }
-
-        public void AddNewBackgroundButtonInspectorHandler()
-        {
-            AddNewBackground();
         }
 
         public void BackButtonInspectorHandler()

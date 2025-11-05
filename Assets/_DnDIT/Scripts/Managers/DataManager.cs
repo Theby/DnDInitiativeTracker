@@ -164,16 +164,13 @@ namespace DnDInitiativeTracker.Manager
             return _sqlController.GetAllMediaTypeNames(MediaAssetType.Background);
         }
 
-        //TODO should we really save a copy of the image right away?
         public void GetTextureFromGallery(MediaAssetType type, Action<TextureUIData> onComplete)
         {
             NativeGalleryController.GetImagePathFromGallery(path =>
             {
-                NativeGalleryController.SaveImageToGallery(path, (fullPath, fileName) =>
-                {
-                    var textureUIData = GetTextureFromPath(fileName, fullPath, type);
-                    onComplete?.Invoke(textureUIData);
-                });
+                var fileName = Path.GetFileNameWithoutExtension(path);
+                var textureUIData = GetTextureFromPath(fileName, path, type);
+                onComplete?.Invoke(textureUIData);
             });
         }
 
@@ -201,6 +198,16 @@ namespace DnDInitiativeTracker.Manager
             return textureUIData;
         }
 
+        public void CreateTexture(TextureUIData textureUIData)
+        {
+            NativeGalleryController.SaveImageToGallery(textureUIData.Path, (fullPath, fileName) =>
+            {
+                textureUIData.Name = fileName;
+                textureUIData.Path = fullPath;
+                _sqlController.AddMediaAsset(textureUIData.ToMediaAssetData());
+            });
+        }
+
         #endregion
 
         #region Audio
@@ -210,15 +217,12 @@ namespace DnDInitiativeTracker.Manager
             return _sqlController.GetAllMediaTypeNames(MediaAssetType.Audio);
         }
 
-        //TODO should we really save a copy of the audio right away?
         public void GetAudioClipFromGallery(Action<AudioUIData> onComplete)
         {
             NativeGalleryController.GetAudioPathFromGallery(path =>
             {
-                NativeGalleryController.SaveAudioToGallery(path, (fullPath, fileName) =>
-                {
-                    GetAudioClipFromPath(fileName, fullPath, onComplete);
-                });
+                var fileName = Path.GetFileNameWithoutExtension(path);
+                GetAudioClipFromPath(fileName, path, onComplete);
             });
         }
 
@@ -249,6 +253,16 @@ namespace DnDInitiativeTracker.Manager
             var audioUIData = new AudioUIData(audioMediaAssetData, audioClip);
             onComplete?.Invoke(audioUIData);
             return audioUIData;
+        }
+
+        void CreateAudio(AudioUIData audioUIData)
+        {
+            NativeGalleryController.SaveImageToGallery(audioUIData.Path, (fullPath, fileName) =>
+            {
+                audioUIData.Name = fileName;
+                audioUIData.Path = fullPath;
+                _sqlController.AddMediaAsset(audioUIData.ToMediaAssetData());
+            });
         }
 
         #endregion
@@ -344,54 +358,17 @@ namespace DnDInitiativeTracker.Manager
 
         #endregion
 
-        // //TODO how to handle CurrentConfiguration? maybe same pattern as the others?
         // public void UpdateEncounter(List<CharacterUIData> characterUIDataList)
         // {
         //     var characterDataList = characterUIDataList.ConvertAll(x => x.ToCharacterData());
         //     foreach (var characterData in characterDataList)
         //     {
-        //         //TODO UIData should have a way to get or remember this id
         //         characterData.SQLId = _sqlController.GetCharacterByName(characterData.Name).SQLId;
         //     }
         //
         //     CurrentEncounter = characterUIDataList;
         //     CurrentConfiguration.Characters = characterDataList;
         //     _sqlController.UpdateCurrentConfiguration(CurrentConfiguration);
-        // }
-        //
-        // public void TryCreateNewBackground(Action onComplete = null)
-        // {
-        //     NativeGalleryController.GetImagePathFromGallery(path =>
-        //     {
-        //         NativeGalleryController.SaveImageToGallery(path, (fullPath, fileName) =>
-        //         {
-        //             CreateNewCurrentBackground(fullPath, fileName);
-        //             onComplete?.Invoke();
-        //         });
-        //     });
-        // }
-        //
-        // void CreateNewCurrentBackground(string fullPath, string fileName)
-        // {
-        //     var backgroundData = new MediaAssetData
-        //     {
-        //         Name = fileName,
-        //         Type = MediaAssetType.Background,
-        //         Path = fullPath,
-        //     };
-        //     backgroundData.SQLId = _sqlController.AddMediaAsset(backgroundData);
-        //
-        //     CurrentConfiguration.Background = backgroundData;
-        //     _sqlController.UpdateCurrentConfiguration(CurrentConfiguration);
-        //     LoadBackgroundUIData();
-        // }
-        //
-        // public void UpdateCurrentBackground(string bgName)
-        // {
-        //     var backgroundData = _sqlController.GetMediaAsset((int)MediaAssetType.Background, bgName);
-        //     CurrentConfiguration.Background = backgroundData;
-        //     _sqlController.UpdateCurrentConfiguration(CurrentConfiguration);
-        //     LoadBackgroundUIData();
         // }
     }
 }
