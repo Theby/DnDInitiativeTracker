@@ -10,17 +10,11 @@ namespace DnDInitiativeTracker.GameData
 
         public MediaAssetData() { }
 
-        public MediaAssetData(MediaAssetSQLData sqlData, string name, MediaAssetType type, string path)
-            : base(sqlData)
-        {
-            Name = name;
-            Type = type;
-            Path = path;
-        }
+        public MediaAssetData(MediaAssetSQLData sqlData, string name, MediaAssetType type, string path) :
+            base(sqlData) => (Name, Type, Path) = (name, type, path);
 
-        public override MediaAssetSQLData ToSQLData()
-        {
-            return new MediaAssetSQLData(
+        public override MediaAssetSQLData ToSQLData() =>
+            new(
                 SQLId,
                 Enabled,
                 InputDate,
@@ -28,6 +22,5 @@ namespace DnDInitiativeTracker.GameData
                 (int)Type,
                 Path
             );
-        }
     }
 }

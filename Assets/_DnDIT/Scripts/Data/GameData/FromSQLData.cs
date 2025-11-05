@@ -9,12 +9,7 @@ namespace DnDInitiativeTracker.GameData
         public bool Enabled { get; set; }
         public  long InputDate { get; set; }
 
-        protected FromSQLData()
-        {
-            SQLId = 0;
-            Enabled = true;
-            InputDate = DateTime.Now.Ticks;
-        }
+        protected FromSQLData() => (SQLId, Enabled, InputDate) = (0, true, DateTime.Now.Ticks);
 
         protected FromSQLData(T sqlData)
         {

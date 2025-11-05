@@ -12,17 +12,12 @@ namespace DnDInitiativeTracker.GameData
 
         public CurrentConfigurationData() { }
 
-        public CurrentConfigurationData(CurrentConfigurationSQLData sqlData, List<CharacterData> characters, List<int> initiativeList, MediaAssetData backgroundData)
-            : base(sqlData)
-        {
-            Characters = characters;
-            InitiativeList = initiativeList;
-            Background = backgroundData;
-        }
+        public CurrentConfigurationData(CurrentConfigurationSQLData sqlData, List<CharacterData> characters,
+            List<int> initiativeList, MediaAssetData backgroundData) : base(sqlData) =>
+            (Characters, InitiativeList, Background) = (characters, initiativeList, backgroundData);
 
-        public override CurrentConfigurationSQLData ToSQLData()
-        {
-            return new CurrentConfigurationSQLData(
+        public override CurrentConfigurationSQLData ToSQLData() =>
+            new(
                 SQLId,
                 Enabled,
                 InputDate,
@@ -30,6 +25,5 @@ namespace DnDInitiativeTracker.GameData
                 InitiativeList.ToIdList(x => x),
                 Background?.SQLId ?? 0
             );
-        }
     }
 }

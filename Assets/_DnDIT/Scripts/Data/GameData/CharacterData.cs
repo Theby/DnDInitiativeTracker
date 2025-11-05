@@ -12,17 +12,12 @@ namespace DnDInitiativeTracker.GameData
 
         public CharacterData() { }
 
-        public CharacterData(CharacterSQLData sqlData, MediaAssetData avatarData, string name, List<MediaAssetData> audioDataList)
-            : base(sqlData)
-        {
-            Avatar = avatarData;
-            AudioList = audioDataList;
-            Name = name;
-        }
+        public CharacterData(CharacterSQLData sqlData, MediaAssetData avatarData, string name,
+            List<MediaAssetData> audioDataList) : base(sqlData) =>
+            (Avatar, AudioList, Name) = (avatarData, audioDataList, name);
 
-        public override CharacterSQLData ToSQLData()
-        {
-            return new CharacterSQLData(
+        public override CharacterSQLData ToSQLData() =>
+            new(
                 SQLId,
                 Enabled,
                 InputDate,
@@ -30,6 +25,5 @@ namespace DnDInitiativeTracker.GameData
                 Name,
                 AudioList.ToIdList(x => x.SQLId)
             );
-        }
     }
 }

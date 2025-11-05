@@ -9,13 +9,8 @@ namespace DnDInitiativeTracker.UIData
         public MediaAssetType Type { get; set; }
         public T Data { get; set; }
 
-        protected MediaAssetUIData()
-        {
-            Name = string.Empty;
-            Path = string.Empty;
-            Type = MediaAssetType.Unknown;
-            Data = null;
-        }
+        protected MediaAssetUIData() =>
+            (Name, Path, Type, Data) = (string.Empty, string.Empty, MediaAssetType.Unknown, null);
 
         protected MediaAssetUIData(MediaAssetData assetData, T data)
         {
@@ -25,14 +20,12 @@ namespace DnDInitiativeTracker.UIData
             Data = data;
         }
 
-        public virtual MediaAssetData ToMediaAssetData()
-        {
-            return new MediaAssetData
+        public MediaAssetData ToMediaAssetData() =>
+            new()
             {
                 Name = Name,
                 Path = Path,
                 Type = Type,
             };
-        }
     }
 }
