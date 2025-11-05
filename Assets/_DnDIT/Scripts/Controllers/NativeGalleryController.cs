@@ -41,7 +41,15 @@ namespace DnDInitiativeTracker.Controller
 
         public static void GetImagePathFromGallery(Action<string> onComplete)
         {
-            NativeGallery.GetImageFromGallery(onComplete.Invoke);
+            try
+            {
+                NativeGallery.GetImageFromGallery(onComplete.Invoke);
+            }
+            catch (Exception e)
+            {
+                onComplete?.Invoke(string.Empty);
+                Debug.LogError(e.Message);
+            }
         }
 
         public static Texture2D GetImageFromPath(string path)
@@ -72,22 +80,45 @@ namespace DnDInitiativeTracker.Controller
 
         public static void SaveImageToGallery(string path, Action<string, string> onComplete = null)
         {
+            if (string.IsNullOrEmpty(path))
+            {
+                onComplete?.Invoke(string.Empty, string.Empty);
+                return;
+            }
+
             var fullPath = path;
             var currentFileName = Path.GetFileNameWithoutExtension(path);
-            NativeGallery.SaveImageToGallery(fullPath, AlbumName, currentFileName, (success, savePath) =>
+
+            try
             {
-                #if UNITY_EDITOR
+                NativeGallery.SaveImageToGallery(fullPath, AlbumName, currentFileName, (success, savePath) =>
+                {
+#if UNITY_EDITOR
                     onComplete?.Invoke(fullPath, currentFileName);
-                #else
+#else
                     var newFileName = Path.GetFileNameWithoutExtension(savePath);
                     onComplete?.Invoke(savePath, newFileName);
-                #endif
-            });
+#endif
+                });
+            }
+            catch (Exception e)
+            {
+                onComplete?.Invoke(string.Empty, string.Empty);
+                Debug.LogError(e.Message);
+            }
         }
 
         public static void GetAudioPathFromGallery(Action<string> onComplete)
         {
-            NativeGallery.GetAudioFromGallery(onComplete.Invoke);
+            try
+            {
+                NativeGallery.GetAudioFromGallery(onComplete.Invoke);
+            }
+            catch (Exception e)
+            {
+                onComplete?.Invoke(string.Empty);
+                Debug.LogError(e.Message);
+            }
         }
 
         public static async Task<AudioClip> GetAudioClipFromPathAsync(string path, Action<AudioClip> onComplete = null)
@@ -100,17 +131,26 @@ namespace DnDInitiativeTracker.Controller
 
             var uri = new Uri(path);
             var audioType = GetAudioType(path);
+            AudioClip audioClip;
 
-            using var www = UnityWebRequestMultimedia.GetAudioClip(uri, audioType);
-            await www.SendWebRequest();
-
-            var audioClip = www.result is not UnityWebRequest.Result.Success
-                ? null
-                : DownloadHandlerAudioClip.GetContent(www);
-
-            if (audioClip != null)
+            try
             {
-                audioClip.name = Path.GetFileNameWithoutExtension(path);
+                using var www = UnityWebRequestMultimedia.GetAudioClip(uri, audioType);
+                await www.SendWebRequest();
+
+                audioClip = www.result is not UnityWebRequest.Result.Success
+                    ? null
+                    : DownloadHandlerAudioClip.GetContent(www);
+
+                if (audioClip != null)
+                {
+                    audioClip.name = Path.GetFileNameWithoutExtension(path);
+                }
+            }
+            catch (Exception e)
+            {
+                audioClip = null;
+                Debug.LogError(e.Message);
             }
 
             onComplete?.Invoke(audioClip);
@@ -127,17 +167,32 @@ namespace DnDInitiativeTracker.Controller
 
         public static void SaveAudioToGallery(string path, Action<string, string> onComplete = null)
         {
+            if (string.IsNullOrEmpty(path))
+            {
+                onComplete?.Invoke(string.Empty, string.Empty);
+                return;
+            }
+
             var fullPath = path;
             var currentFileName = Path.GetFileNameWithoutExtension(path);
-            NativeGallery.SaveAudioToGallery(fullPath, AlbumName, currentFileName, (success, savePath) =>
+
+            try
             {
+                NativeGallery.SaveAudioToGallery(fullPath, AlbumName, currentFileName, (success, savePath) =>
+                {
 #if UNITY_EDITOR
-                onComplete?.Invoke(fullPath, currentFileName);
+                    onComplete?.Invoke(fullPath, currentFileName);
 #else
-                var newFileName = Path.GetFileNameWithoutExtension(savePath);
-                onComplete?.Invoke(savePath, newFileName);
+                    var newFileName = Path.GetFileNameWithoutExtension(savePath);
+                    onComplete?.Invoke(savePath, newFileName);
 #endif
-            });
+                });
+            }
+            catch (Exception e)
+            {
+                onComplete?.Invoke(string.Empty, string.Empty);
+                Debug.LogError(e.Message);
+            }
         }
     }
 }
