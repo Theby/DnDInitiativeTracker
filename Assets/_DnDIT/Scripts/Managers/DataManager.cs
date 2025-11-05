@@ -15,13 +15,7 @@ namespace DnDInitiativeTracker.Manager
         const int CurrentConfigID = 1;
 
         public bool IsLoaded { get; private set; }
-
-        //TODO this seems to me like a CurrentConfiguration UI Data
-        public List<CharacterUIData> CurrentEncounter { get; set; }
-        public List<int> InitiativeList { get; set; }
-        public TextureUIData CurrentBackground { get; set; }
-
-        CurrentConfigurationData CurrentConfiguration { get; set; }
+        public CurrentConfigurationUIData CurrentConfigurationUIData { get; set; } //TODO maybe CanvasManager should have this and request the load
 
         SQLiteController _sqlController;
         int _defaultAvatarID;
@@ -143,51 +137,17 @@ namespace DnDInitiativeTracker.Manager
         {
             IsLoaded = false;
 
-            LoadConfigurationData();
-            yield return LoadUIData();
+            yield return LoadConfigurationData();
 
             IsLoaded = true;
         }
 
-        void LoadConfigurationData()
+        IEnumerator LoadConfigurationData()
         {
-            CurrentConfigurationData config = _sqlController.GetCurrentConfigurationById(CurrentConfigID);
-            CurrentConfiguration = config;
-        }
-
-        IEnumerator LoadUIData()
-        {
-            yield return LoadCurrentEncounterUIData();
-            LoadBackgroundUIData();
-        }
-
-        IEnumerator LoadCurrentEncounterUIData()
-        {
-            var currentEncounter = new List<CharacterUIData>();
-            foreach (var character in CurrentConfiguration.Characters)
+            yield return GetCurrentConfigurationFromDataBase(CurrentConfigID, uiData =>
             {
-                yield return GetCharacterFromDataBase(character.Name, characterUIData =>
-                {
-                    currentEncounter.Add(characterUIData);
-                });
-            }
-
-            CurrentEncounter = currentEncounter;
-            InitiativeList = CurrentConfiguration.InitiativeList;
-        }
-
-        void LoadBackgroundUIData()
-        {
-            if (CurrentBackground != null)
-            {
-                Destroy(CurrentBackground.Data);
-            }
-
-            var bgName = CurrentConfiguration.Background.Name;
-            var bgPath = CurrentConfiguration.Background.Path;
-            var bgType = CurrentConfiguration.Background.Type;
-            var backgroundUIData = GetTextureFromPath(bgName, bgPath, bgType);
-            CurrentBackground = backgroundUIData;
+                CurrentConfigurationUIData = uiData;
+            });
         }
 
         #endregion
@@ -345,54 +305,93 @@ namespace DnDInitiativeTracker.Manager
 
         #endregion
 
-        //TODO how to handle CurrentConfiguration? maybe same pattern as the others?
-        public void UpdateEncounter(List<CharacterUIData> characterUIDataList)
+        #region CurrentConfiguration
+
+        public IEnumerator GetCurrentConfigurationFromDataBase(int configID, Action<CurrentConfigurationUIData> onComplete)
         {
-            var characterDataList = characterUIDataList.ConvertAll(x => x.ToCharacterData());
-            foreach (var characterData in characterDataList)
+            CurrentConfigurationData config = _sqlController.GetCurrentConfigurationById(configID);
+
+            var currentEncounter = new List<CharacterUIData>();
+            foreach (var character in config.Characters)
             {
-                //TODO UIData should have a way to get or remember this id
-                characterData.SQLId = _sqlController.GetCharacterByName(characterData.Name).SQLId;
+                yield return GetCharacterFromDataBase(character.Name, characterUIData =>
+                {
+                    currentEncounter.Add(characterUIData);
+                });
             }
 
-            CurrentEncounter = characterUIDataList;
-            CurrentConfiguration.Characters = characterDataList;
-            _sqlController.UpdateCurrentConfiguration(CurrentConfiguration);
-        }
+            var initiativeList = config.InitiativeList;
 
-        public void TryCreateNewBackground(Action onComplete = null)
-        {
-            NativeGalleryController.GetImagePathFromGallery(path =>
-            {
-                NativeGalleryController.SaveImageToGallery(path, (fullPath, fileName) =>
-                {
-                    CreateNewCurrentBackground(fullPath, fileName);
-                    onComplete?.Invoke();
-                });
-            });
-        }
+            var bgName = config.Background.Name;
+            var bgPath = config.Background.Path;
+            var bgType = config.Background.Type;
+            var backgroundUIData = GetTextureFromPath(bgName, bgPath, bgType);
 
-        void CreateNewCurrentBackground(string fullPath, string fileName)
-        {
-            var backgroundData = new MediaAssetData
+            var uiData = new CurrentConfigurationUIData
             {
-                Name = fileName,
-                Type = MediaAssetType.Background,
-                Path = fullPath,
+                CurrentEncounter = currentEncounter,
+                InitiativeList = initiativeList,
+                CurrentBackground = backgroundUIData,
             };
-            backgroundData.SQLId = _sqlController.AddMediaAsset(backgroundData);
-
-            CurrentConfiguration.Background = backgroundData;
-            _sqlController.UpdateCurrentConfiguration(CurrentConfiguration);
-            LoadBackgroundUIData();
+            onComplete?.Invoke(uiData);
         }
 
-        public void UpdateCurrentBackground(string bgName)
+        public void UpdateCurrentConfiguration(CurrentConfigurationUIData uiData)
         {
-            var backgroundData = _sqlController.GetMediaAsset((int)MediaAssetType.Background, bgName);
-            CurrentConfiguration.Background = backgroundData;
-            _sqlController.UpdateCurrentConfiguration(CurrentConfiguration);
-            LoadBackgroundUIData();
+            var configurationData = uiData.ToCurrentConfigurationData();
+            _sqlController.UpdateCurrentConfiguration(configurationData);
         }
+
+        #endregion
+
+        // //TODO how to handle CurrentConfiguration? maybe same pattern as the others?
+        // public void UpdateEncounter(List<CharacterUIData> characterUIDataList)
+        // {
+        //     var characterDataList = characterUIDataList.ConvertAll(x => x.ToCharacterData());
+        //     foreach (var characterData in characterDataList)
+        //     {
+        //         //TODO UIData should have a way to get or remember this id
+        //         characterData.SQLId = _sqlController.GetCharacterByName(characterData.Name).SQLId;
+        //     }
+        //
+        //     CurrentEncounter = characterUIDataList;
+        //     CurrentConfiguration.Characters = characterDataList;
+        //     _sqlController.UpdateCurrentConfiguration(CurrentConfiguration);
+        // }
+        //
+        // public void TryCreateNewBackground(Action onComplete = null)
+        // {
+        //     NativeGalleryController.GetImagePathFromGallery(path =>
+        //     {
+        //         NativeGalleryController.SaveImageToGallery(path, (fullPath, fileName) =>
+        //         {
+        //             CreateNewCurrentBackground(fullPath, fileName);
+        //             onComplete?.Invoke();
+        //         });
+        //     });
+        // }
+        //
+        // void CreateNewCurrentBackground(string fullPath, string fileName)
+        // {
+        //     var backgroundData = new MediaAssetData
+        //     {
+        //         Name = fileName,
+        //         Type = MediaAssetType.Background,
+        //         Path = fullPath,
+        //     };
+        //     backgroundData.SQLId = _sqlController.AddMediaAsset(backgroundData);
+        //
+        //     CurrentConfiguration.Background = backgroundData;
+        //     _sqlController.UpdateCurrentConfiguration(CurrentConfiguration);
+        //     LoadBackgroundUIData();
+        // }
+        //
+        // public void UpdateCurrentBackground(string bgName)
+        // {
+        //     var backgroundData = _sqlController.GetMediaAsset((int)MediaAssetType.Background, bgName);
+        //     CurrentConfiguration.Background = backgroundData;
+        //     _sqlController.UpdateCurrentConfiguration(CurrentConfiguration);
+        //     LoadBackgroundUIData();
+        // }
     }
 }

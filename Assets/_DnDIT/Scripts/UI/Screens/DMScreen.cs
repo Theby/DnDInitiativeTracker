@@ -76,7 +76,7 @@ namespace DnDInitiativeTracker.UI
         {
             _layoutList.Clear();
             scrollContent.transform.DestroyChildren();
-            foreach (var characterData in _data.CurrentEncounter)
+            foreach (var characterData in _data.CurrentConfigurationUIData.CurrentEncounter)
             {
                 InstantiateCharacterInitiativeLayout(characterData);
             }

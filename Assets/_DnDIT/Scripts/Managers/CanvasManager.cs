@@ -44,7 +44,7 @@ namespace DnDInitiativeTracker.Manager
 
         void SetBackground()
         {
-            background.texture = dataManager.CurrentBackground.Data;
+            background.texture = dataManager.CurrentConfigurationUIData.CurrentBackground.Data;
         }
     }
 }

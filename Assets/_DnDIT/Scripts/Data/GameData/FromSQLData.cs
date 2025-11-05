@@ -18,6 +18,8 @@ namespace DnDInitiativeTracker.GameData
             InputDate = sqlData?.InputDate ?? DateTime.Now.Ticks;
         }
 
+        public void UpdateRegister(SQLiteData sqlData) => (SQLId, Enabled, InputDate) = (sqlData.Id, sqlData.Enabled, sqlData.InputDate);
+
         public abstract T ToSQLData();
     }
 }

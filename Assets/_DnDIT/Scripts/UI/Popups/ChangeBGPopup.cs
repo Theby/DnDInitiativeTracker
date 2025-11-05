@@ -43,7 +43,7 @@ namespace DnDInitiativeTracker.UI
             nameDropdown.ClearOptions();
             nameDropdown.AddOptions(_data.BackgroundNames);
 
-            var dropDownIndex = nameDropdown.options.FindIndex(x => x.text == _data.CurrentBackground.Name);
+            var dropDownIndex = nameDropdown.options.FindIndex(x => x.text == _data.CurrentConfigurationUIData.CurrentBackground.Name);
             nameDropdown.value = dropDownIndex;
         }
     }

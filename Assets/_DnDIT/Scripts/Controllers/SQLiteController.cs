@@ -114,6 +114,17 @@ namespace DnDInitiativeTracker.Controller
             _sqLiteService.Insert(sqlData);
         }
 
+        public void UpdateCharacter(CharacterData character)
+        {
+            var sqlData = _sqLiteService.GetBy<CharacterSQLData>(c => c.Name == character.Name);
+            if (sqlData != null)
+            {
+                character.UpdateRegister(sqlData);
+            }
+            sqlData = CreateCharacterSQLData(character);
+            _sqLiteService.Update(sqlData);
+        }
+
         public CharacterData GetCharacterById(int id)
         {
             var sqlData = _sqLiteService.GetById<CharacterSQLData>(id);
@@ -146,12 +157,6 @@ namespace DnDInitiativeTracker.Controller
             return names.ToList();
         }
 
-        public void UpdateCharacter(CharacterData character)
-        {
-            var sqlData = CreateCharacterSQLData(character);
-            _sqLiteService.Update(sqlData);
-        }
-
         CharacterData CreateCharacterData(CharacterSQLData sqlData)
         {
             var avatarData = GetMediaAsset(sqlData.AvatarId);
@@ -168,7 +173,7 @@ namespace DnDInitiativeTracker.Controller
             if (!ExistsMediaAsset(avatarSQLData.Id))
             {
                 _sqLiteService.Insert(avatarSQLData);
-                character.Avatar.SQLId = avatarSQLData.Id;
+                character.Avatar.UpdateRegister(avatarSQLData);
             }
 
             foreach (var audioData in character.AudioList)
@@ -178,7 +183,7 @@ namespace DnDInitiativeTracker.Controller
                     continue;
 
                 _sqLiteService.Insert(audioSQLData);
-                audioData.SQLId = audioSQLData.Id;
+                audioData.UpdateRegister(audioSQLData);
             }
 
             var sqlData = character.ToSQLData();
@@ -196,8 +201,14 @@ namespace DnDInitiativeTracker.Controller
 
         public void AddCurrentConfiguration(CurrentConfigurationData currentConfiguration)
         {
-            var configSQL = currentConfiguration.ToSQLData();
+            var configSQL = CreateCurrentConfigurationSQLData(currentConfiguration);
             _sqLiteService.Insert(configSQL);
+        }
+
+        public void UpdateCurrentConfiguration(CurrentConfigurationData currentConfiguration)
+        {
+            var configSQL = CreateCurrentConfigurationSQLData(currentConfiguration);
+            _sqLiteService.Update(configSQL);
         }
 
         public CurrentConfigurationData GetCurrentConfigurationById(int id)
@@ -214,10 +225,25 @@ namespace DnDInitiativeTracker.Controller
             return config;
         }
 
-        public void UpdateCurrentConfiguration(CurrentConfigurationData currentConfiguration)
+        CurrentConfigurationSQLData CreateCurrentConfigurationSQLData(CurrentConfigurationData configData)
         {
-            var sqlData = currentConfiguration.ToSQLData();
-            _sqLiteService.Update(sqlData);
+            configData.Characters ??= new List<CharacterData>();
+            foreach (var character in configData.Characters)
+            {
+                UpdateCharacter(character);
+            }
+
+            configData.InitiativeList ??= new List<int>();
+
+            var backgroundSQLData = configData.Background.ToSQLData();
+            if (!ExistsMediaAsset(backgroundSQLData.Id))
+            {
+                _sqLiteService.Insert(backgroundSQLData);
+                configData.Background.UpdateRegister(backgroundSQLData);
+            }
+
+            var sqlData = configData.ToSQLData();
+            return sqlData;
         }
 
         #endregion

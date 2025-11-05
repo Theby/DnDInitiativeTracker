@@ -52,7 +52,7 @@ namespace DnDInitiativeTracker.ScreenManager
 
         void RefreshData()
         {
-            _data = dataManager.CurrentEncounter;
+            _data = dataManager.CurrentConfigurationUIData.CurrentEncounter;
         }
 
         void EditEncounter()

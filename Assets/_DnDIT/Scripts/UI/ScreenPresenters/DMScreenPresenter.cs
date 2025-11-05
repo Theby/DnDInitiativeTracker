@@ -91,8 +91,7 @@ namespace DnDInitiativeTracker.ScreenManager
 
         void RefreshData()
         {
-            _data.CurrentEncounter = dataManager.CurrentEncounter;
-            _data.CurrentBackground = dataManager.CurrentBackground;
+            _data.CurrentConfigurationUIData = dataManager.CurrentConfigurationUIData;
             _data.CharacterNames = dataManager.GetAllCharacterNames();
             _data.BackgroundNames = dataManager.GetAllBackgroundNames();
             _data.AudioNames = dataManager.GetAllAudioNames();
@@ -100,7 +99,7 @@ namespace DnDInitiativeTracker.ScreenManager
 
         void RefreshBackground()
         {
-            background.texture = dataManager.CurrentBackground.Data;
+            background.texture = dataManager.CurrentConfigurationUIData.CurrentBackground.Data;
         }
 
         void RefreshScreen()
@@ -137,7 +136,7 @@ namespace DnDInitiativeTracker.ScreenManager
 
             //TODO Maybe Encounter, Audio and Avatar should be its own SQL Class like Background
             var updatedEncounter = dmScreen.GetEncounter();
-            dataManager.UpdateEncounter(updatedEncounter);
+            //TODO dataManager.UpdateEncounter(updatedEncounter);
             RefreshData();
         }
 
@@ -151,7 +150,7 @@ namespace DnDInitiativeTracker.ScreenManager
                 dmScreen.RefreshLayout(layoutIndex, characterUIData);
 
                 var updatedEncounter = dmScreen.GetEncounter();
-                dataManager.UpdateEncounter(updatedEncounter);
+                //TODO dataManager.UpdateEncounter(updatedEncounter);
                 RefreshData();
             });
         }
@@ -161,7 +160,7 @@ namespace DnDInitiativeTracker.ScreenManager
             dmScreen.RemoveCharacterInitiativeLayout(positionIndex);
 
             var updatedEncounter = dmScreen.GetEncounter();
-            dataManager.UpdateEncounter(updatedEncounter);
+            //TODO dataManager.UpdateEncounter(updatedEncounter);
             RefreshData();
         }
 
@@ -286,10 +285,10 @@ namespace DnDInitiativeTracker.ScreenManager
                 return;
 
             var bgName = _data.BackgroundNames[index];
-            if (_data.CurrentBackground.Name == bgName)
+            if (_data.CurrentConfigurationUIData.CurrentBackground.Name == bgName)
                 return;
 
-            dataManager.UpdateCurrentBackground(bgName);
+            //TODO dataManager.UpdateCurrentBackground(bgName);
 
             Refresh();
         }
@@ -297,7 +296,7 @@ namespace DnDInitiativeTracker.ScreenManager
         void AddNewBackground()
         {
             //TODO show loader and stop on complete
-            dataManager.TryCreateNewBackground();
+            //TODO dataManager.TryCreateNewBackground();
 
             Refresh();
         }
