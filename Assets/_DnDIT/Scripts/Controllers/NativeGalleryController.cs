@@ -90,19 +90,14 @@ namespace DnDInitiativeTracker.Controller
             NativeGallery.GetAudioFromGallery(onComplete.Invoke);
         }
 
-        public static void GetAudioClipFromPath(string path, Action<AudioClip> onComplete = null)
+        public static async Task<AudioClip> GetAudioClipFromPathAsync(string path, Action<AudioClip> onComplete = null)
         {
             if (string.IsNullOrEmpty(path))
             {
                 onComplete?.Invoke(null);
-                return;
+                return null;
             }
 
-            GetAudioClipFromPathAsync(path, onComplete);
-        }
-
-        public static async Task<AudioClip> GetAudioClipFromPathAsync(string path, Action<AudioClip> onComplete = null)
-        {
             var uri = new Uri(path);
             var audioType = GetAudioType(path);
 

@@ -142,7 +142,7 @@ namespace DnDInitiativeTracker.UI
             var randomIndex = Random.Range(0, audioList.Count);
             var audioClip = audioList[randomIndex];
 
-            return audioClip.AudioClip;
+            return audioClip.Data;
         }
 
         public void ResetEncounterOrder()

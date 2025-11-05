@@ -19,7 +19,7 @@ namespace DnDInitiativeTracker.Manager
         //TODO this seems to me like a CurrentConfiguration UI Data
         public List<CharacterUIData> CurrentEncounter { get; set; }
         public List<int> InitiativeList { get; set; }
-        public BackgroundUIData CurrentBackground { get; set; }
+        public TextureUIData CurrentBackground { get; set; }
 
         CurrentConfigurationData CurrentConfiguration { get; set; }
 
@@ -166,33 +166,10 @@ namespace DnDInitiativeTracker.Manager
             var currentEncounter = new List<CharacterUIData>();
             foreach (var character in CurrentConfiguration.Characters)
             {
-                var audioClips = new List<AudioUIData>();
-                foreach (var audioData in character.AudioList)
+                yield return GetCharacterFromDataBase(character.Name, characterUIData =>
                 {
-                    yield return NativeGalleryController.GetAudioClipFromPathAsync(audioData.Path, clip =>
-                    {
-                        var audioClip = new AudioUIData
-                        {
-                            Name = audioData.Name,
-                            FilePath = audioData.Path,
-                            AudioClip = clip,
-                        };
-                        audioClips.Add(audioClip);
-                    });
-                }
-
-                var characterUIData = new CharacterUIData
-                {
-                    Avatar = new AvatarUIData
-                    {
-                        Name = character.Avatar.Name,
-                        FilePath = character.Avatar.Path,
-                        AvatarTexture = NativeGalleryController.GetImageFromPath(character.Avatar.Path)
-                    },
-                    Name = character.Name,
-                    AudioClips = audioClips,
-                };
-                currentEncounter.Add(characterUIData);
+                    currentEncounter.Add(characterUIData);
+                });
             }
 
             CurrentEncounter = currentEncounter;
@@ -203,28 +180,23 @@ namespace DnDInitiativeTracker.Manager
         {
             if (CurrentBackground != null)
             {
-                Destroy(CurrentBackground.BackgroundTexture);
+                Destroy(CurrentBackground.Data);
             }
 
-            var backgroundUIData = new BackgroundUIData
-            {
-                Name = CurrentConfiguration.Background.Name,
-                FilePath = CurrentConfiguration.Background.Path,
-                BackgroundTexture = NativeGalleryController.GetImageFromPath(CurrentConfiguration.Background.Path)
-            };
+            var bgName = CurrentConfiguration.Background.Name;
+            var bgPath = CurrentConfiguration.Background.Path;
+            var bgType = CurrentConfiguration.Background.Type;
+            var backgroundUIData = GetTextureFromPath(bgName, bgPath, bgType);
             CurrentBackground = backgroundUIData;
         }
 
         #endregion
 
+        #region Texture
+
         public List<string> GetAllAvatarNames()
         {
             return _sqlController.GetAllMediaTypeNames(MediaAssetType.Avatar);
-        }
-
-        public List<string> GetAllAudioNames()
-        {
-            return _sqlController.GetAllMediaTypeNames(MediaAssetType.Audio);
         }
 
         public List<string> GetAllBackgroundNames()
@@ -232,47 +204,131 @@ namespace DnDInitiativeTracker.Manager
             return _sqlController.GetAllMediaTypeNames(MediaAssetType.Background);
         }
 
-        public List<string> GetAllCharacterNames()
-        {
-            return _sqlController.GetAllCharactersNames();
-        }
-
-        public void GetAvatarFromGallery(Action<string, Texture> onComplete)
+        //TODO should we really save a copy of the image right away?
+        public void GetTextureFromGallery(MediaAssetType type, Action<TextureUIData> onComplete)
         {
             NativeGalleryController.GetImagePathFromGallery(path =>
             {
                 NativeGalleryController.SaveImageToGallery(path, (fullPath, fileName) =>
                 {
-                    var texture = NativeGalleryController.GetImageFromPath(fullPath);
-                    texture.name = fileName;
-                    onComplete?.Invoke(fullPath, texture);
+                    var textureUIData = GetTextureFromPath(fileName, fullPath, type);
+                    onComplete?.Invoke(textureUIData);
                 });
             });
         }
 
-        public void GetAudioClipFromGallery(Action<string, AudioClip> onComplete)
+        public TextureUIData GetTextureFromDataBase(string fileName, MediaAssetType type)
+        {
+            var mediaAsset = _sqlController.GetMediaAsset((int)type, fileName);
+            var textureUIData = GetTextureFromPath(mediaAsset.Name, mediaAsset.Path, type);
+
+            return textureUIData;
+        }
+
+        TextureUIData GetTextureFromPath(string fileName, string fullPath, MediaAssetType type)
+        {
+            var texture = NativeGalleryController.GetImageFromPath(fullPath);
+            texture.name = fileName;
+
+            var textureMediaAssetData = new MediaAssetData
+            {
+                Name = fileName,
+                Path = fullPath,
+                Type = type,
+            };
+
+            var textureUIData = new TextureUIData(textureMediaAssetData, texture);
+            return textureUIData;
+        }
+
+        #endregion
+
+        #region Audio
+
+        public List<string> GetAllAudioNames()
+        {
+            return _sqlController.GetAllMediaTypeNames(MediaAssetType.Audio);
+        }
+
+        //TODO should we really save a copy of the audio right away?
+        public void GetAudioClipFromGallery(Action<AudioUIData> onComplete)
         {
             NativeGalleryController.GetAudioPathFromGallery(path =>
             {
                 NativeGalleryController.SaveAudioToGallery(path, (fullPath, fileName) =>
                 {
-                    NativeGalleryController.GetAudioClipFromPath(fullPath, audioClip =>
-                    {
-                        onComplete?.Invoke(fullPath, audioClip);
-                    });
+                    GetAudioClipFromPath(fileName, fullPath, onComplete);
                 });
             });
         }
 
-        public void GetAudioClipByName(string audioName, Action<string, AudioClip> onComplete)
+        public IEnumerator GetAudioClipFromDataBase(string audioName, Action<AudioUIData> onComplete)
         {
             var mediaAsset = _sqlController.GetMediaAsset((int)MediaAssetType.Audio, audioName);
-            NativeGalleryController.GetAudioClipFromPath(mediaAsset.Path, audioClip => onComplete?.Invoke(mediaAsset.Path, audioClip));
+            yield return GetAudioClipFromPath(mediaAsset.Name, mediaAsset.Path, audioUIData =>
+            {
+                onComplete?.Invoke(audioUIData);
+            });
         }
 
-        public CharacterData GetCharacterByName(string characterName)
+        async Task<AudioUIData> GetAudioClipFromPath(string fileName, string fullPath, Action<AudioUIData> onComplete = null)
         {
-            return _sqlController.GetCharacterByName(characterName);
+            var audioClip = await NativeGalleryController.GetAudioClipFromPathAsync(fullPath);
+            if (audioClip == null)
+                return null;
+
+            audioClip.name = fileName;
+
+            var audioMediaAssetData = new MediaAssetData
+            {
+                Name = fileName,
+                Path = fullPath,
+                Type = MediaAssetType.Audio,
+            };
+
+            var audioUIData = new AudioUIData(audioMediaAssetData, audioClip);
+            onComplete?.Invoke(audioUIData);
+            return audioUIData;
+        }
+
+        #endregion
+
+        #region Character
+
+         public List<string> GetAllCharacterNames()
+        {
+            return _sqlController.GetAllCharactersNames();
+        }
+
+        public IEnumerator GetCharacterFromDataBase(string characterName, Action<CharacterUIData> onComplete)
+        {
+            var characterData = _sqlController.GetCharacterByName(characterName);
+            yield return GetCharacterUIDataAsync(characterData, characterUIData =>
+            {
+                onComplete?.Invoke(characterUIData);
+            });
+        }
+
+        async Task<CharacterUIData> GetCharacterUIDataAsync(CharacterData characterData, Action<CharacterUIData> onComplete = null)
+        {
+            var avatarUIData = GetTextureFromPath(characterData.Avatar.Name, characterData.Avatar.Path, characterData.Avatar.Type);
+            var characterName = characterData.Name;
+            var audioClips = new List<AudioUIData>();
+            foreach (var audioData in characterData.AudioList)
+            {
+                var audioUIData = await GetAudioClipFromPath(audioData.Name, audioData.Path);
+                audioClips.Add(audioUIData);
+            }
+
+            var characterUIData = new CharacterUIData
+            {
+                Avatar = avatarUIData,
+                Name = characterName,
+                AudioClips = audioClips,
+            };
+
+            onComplete?.Invoke(characterUIData);
+            return characterUIData;
         }
 
         public void CreateCharacter(CharacterUIData characterUIData)
@@ -287,44 +343,9 @@ namespace DnDInitiativeTracker.Manager
             _sqlController.UpdateCharacter(characterData);
         }
 
-        public void CreateCharacterUIData(CharacterData characterData, Action<CharacterUIData> onComplete)
-        {
-            CreateCharacterUIDataAsync(characterData, onComplete);
-        }
+        #endregion
 
-        public async Task CreateCharacterUIDataAsync(CharacterData characterData, Action<CharacterUIData> onComplete)
-        {
-            var avatarUIData = new AvatarUIData
-            {
-                Name = characterData.Avatar.Name,
-                FilePath = characterData.Avatar.Path,
-                AvatarTexture = NativeGalleryController.GetImageFromPath(characterData.Avatar.Path),
-            };
-
-            var audioClips = new List<AudioUIData>();
-            foreach (var audioData in characterData.AudioList)
-            {
-                var audioClip = await NativeGalleryController.GetAudioClipFromPathAsync(audioData.Path);
-
-                var audioUIData = new AudioUIData
-                {
-                    Name = audioData.Name,
-                    FilePath = audioData.Path,
-                    AudioClip = audioClip,
-                };
-                audioClips.Add(audioUIData);
-            }
-
-            var characterUIData = new CharacterUIData
-            {
-                Avatar = avatarUIData,
-                Name = characterData.Name,
-                AudioClips = audioClips,
-            };
-
-            onComplete?.Invoke(characterUIData);
-        }
-
+        //TODO how to handle CurrentConfiguration? maybe same pattern as the others?
         public void UpdateEncounter(List<CharacterUIData> characterUIDataList)
         {
             var characterDataList = characterUIDataList.ConvertAll(x => x.ToCharacterData());

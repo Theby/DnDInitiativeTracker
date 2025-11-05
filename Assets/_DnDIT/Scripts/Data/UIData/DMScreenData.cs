@@ -6,7 +6,7 @@ namespace DnDInitiativeTracker.UIData
     {
         public List<CharacterUIData> CurrentEncounter { get; set; } = new();
         public List<int> InitiativeList { get; set; } = new();
-        public BackgroundUIData CurrentBackground { get; set; }
+        public TextureUIData CurrentBackground { get; set; }
 
         public List<string> CharacterNames { get; set; } = new();
         public List<string> BackgroundNames { get; set; } = new();

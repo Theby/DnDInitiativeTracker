@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using System.Linq;
+using DnDInitiativeTracker.GameData;
 using DnDInitiativeTracker.Manager;
 using DnDInitiativeTracker.UI;
 using DnDInitiativeTracker.UIData;
@@ -98,7 +100,7 @@ namespace DnDInitiativeTracker.ScreenManager
 
         void RefreshBackground()
         {
-            background.texture = dataManager.CurrentBackground.BackgroundTexture;
+            background.texture = dataManager.CurrentBackground.Data;
         }
 
         void RefreshScreen()
@@ -139,13 +141,12 @@ namespace DnDInitiativeTracker.ScreenManager
             RefreshData();
         }
 
-        void CharacterEncounterSelected(int layoutIndex, string characterName)
+        IEnumerator CharacterEncounterSelected(int layoutIndex, string characterName)
         {
             //TODO maybe this UI and layouts should only use the name and initaitive
             //in a simple data structure and you get the proper data later when saving or going
             //back to PlayerScreen
-            var characterData = dataManager.GetCharacterByName(characterName);
-            dataManager.CreateCharacterUIData(characterData, characterUIData =>
+            yield return dataManager.GetCharacterFromDataBase(characterName, characterUIData =>
             {
                 dmScreen.RefreshLayout(layoutIndex, characterUIData);
 
@@ -166,15 +167,14 @@ namespace DnDInitiativeTracker.ScreenManager
 
         void ChangeEditableCharacterAvatar()
         {
-            dataManager.GetAvatarFromGallery((fullPath, texture) =>
+            dataManager.GetTextureFromGallery(MediaAssetType.Avatar, textureUIData =>
             {
-                if (_editableCharacterUIData.Avatar.AvatarTexture != null)
+                if (_editableCharacterUIData.Avatar.Data != null)
                 {
-                    Destroy(_editableCharacterUIData.Avatar.AvatarTexture);
+                    Destroy(_editableCharacterUIData.Avatar.Data);
                 }
 
-                _editableCharacterUIData.Avatar.AvatarTexture = texture;
-                _editableCharacterUIData.Avatar.FilePath = fullPath;
+                _editableCharacterUIData.Avatar = textureUIData;
 
                 Refresh();
             });
@@ -187,44 +187,45 @@ namespace DnDInitiativeTracker.ScreenManager
 
         void FetchAudioClipFromGallery(int index)
         {
-            dataManager.GetAudioClipFromGallery((fullPath, audioClip) =>
+            dataManager.GetAudioClipFromGallery(audioUIData =>
             {
-                UpdateEditableCharacterUIAudioData(index, audioClip, fullPath);
+                UpdateEditableCharacterUIAudioData(index, audioUIData);
             });
         }
 
-        void UpdateEditableCharacterAudioClip(int index, string audioName)
+        IEnumerator UpdateEditableCharacterAudioClip(int index, string audioName)
         {
             var currentAudioClip = _editableCharacterUIData.AudioClips.ElementAtOrDefault(index);
             if (currentAudioClip != null && currentAudioClip.Name == audioName)
-                return;
+                yield break;
 
-            dataManager.GetAudioClipByName(audioName,
-                (fullPath, audioClip) => { UpdateEditableCharacterUIAudioData(index, audioClip, fullPath); });
+            yield return dataManager.GetAudioClipFromDataBase(audioName, audioUIData =>
+            {
+                UpdateEditableCharacterUIAudioData(index, audioUIData);
+            });
         }
 
-        void UpdateEditableCharacterUIAudioData(int index, AudioClip audioClip, string fullPath)
+        void UpdateEditableCharacterUIAudioData(int index, AudioUIData audioUIData)
         {
             var currentClip = _editableCharacterUIData.AudioClips.ElementAtOrDefault(index);
             if (currentClip != null)
             {
-                currentClip.AudioClip.UnloadAudioData();
-                AudioClip.Destroy(currentClip.AudioClip);
+                currentClip.Data.UnloadAudioData();
+                AudioClip.Destroy(currentClip.Data);
             }
 
             //TODO all this editable maybe should be moved somewhere else
             //Also maybe we need some Data that holds the AudioClip/Texture along the MediaAsset
             //consider making UIData classes work like that
-            _editableCharacterUIData.AudioClips[index].AudioClip = audioClip;
-            _editableCharacterUIData.AudioClips[index].FilePath = fullPath;
+            _editableCharacterUIData.AudioClips[index] = audioUIData;
 
             //TODO hackie, we should separate adding an Asset vs selection already added assets.
             //one is the add button with the field to show the path, the other is the dropdown
             //you use one or the other in the ui
             RefreshData();
-            if (!_data.AudioNames.Contains(audioClip.name))
+            if (!_data.AudioNames.Contains(audioUIData.Name))
             {
-                _data.AudioNames.Add(audioClip.name);
+                _data.AudioNames.Add(audioUIData.Name);
             }
 
             RefreshPopup();
@@ -235,7 +236,7 @@ namespace DnDInitiativeTracker.ScreenManager
             var audioClip = _editableCharacterUIData.AudioClips.ElementAtOrDefault(index);
             if (audioClip != null)
             {
-                audioSource.PlayOneShot(audioClip.AudioClip);
+                audioSource.PlayOneShot(audioClip.Data);
             }
         }
 
@@ -250,18 +251,17 @@ namespace DnDInitiativeTracker.ScreenManager
             //TODO should clear and destroy data after this?
         }
 
-        void CharacterSelected(int index)
+        IEnumerator CharacterSelected(int index)
         {
             //consider getting the name from the dropdown instead of index
             if (_data.CharacterNames.Count <= index)
-                return;
+                yield break;
 
             var characterName = _data.CharacterNames[index];
             if (_editableCharacterUIData.Name == characterName)
-                return;
+                yield break;
 
-            var characterData = dataManager.GetCharacterByName(characterName);
-            dataManager.CreateCharacterUIData(characterData, characterUIData =>
+            yield return dataManager.GetCharacterFromDataBase(characterName, characterUIData =>
             {
                 _editableCharacterUIData.SetData(characterUIData);
                 RefreshPopup();
@@ -321,7 +321,7 @@ namespace DnDInitiativeTracker.ScreenManager
 
         public void CharacterEncounterSelectedInspectorHandler(int layoutIndex, string characterName)
         {
-            CharacterEncounterSelected(layoutIndex, characterName);
+            StartCoroutine(CharacterEncounterSelected(layoutIndex, characterName));
         }
 
         public void RemoveCharacterLayoutInspectorHandler(int positionIndex)
@@ -361,7 +361,7 @@ namespace DnDInitiativeTracker.ScreenManager
 
         public void AudioSelectionChangedInspectorHandler(int index, string audioName)
         {
-            UpdateEditableCharacterAudioClip(index, audioName);
+            StartCoroutine(UpdateEditableCharacterAudioClip(index, audioName));
         }
 
         public void PlayAudioButtonInspectorHandler(int index)
@@ -376,7 +376,7 @@ namespace DnDInitiativeTracker.ScreenManager
 
         public void CharacterSelectedInspectorHandler(int index)
         {
-            CharacterSelected(index);
+            StartCoroutine(CharacterSelected(index));
         }
 
         public void UpdateCharacterButtonInspectorHandler()

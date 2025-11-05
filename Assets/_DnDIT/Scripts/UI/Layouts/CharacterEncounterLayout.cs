@@ -13,7 +13,7 @@ public class CharacterEncounterLayout : MonoBehaviour
     public void SetData(CharacterUIData data)
     {
         Data = data;
-        avatarImage.texture = data.Avatar.AvatarTexture;
+        avatarImage.texture = data.Avatar.Data;
         nameLabel.text = data.Name;
     }
 }

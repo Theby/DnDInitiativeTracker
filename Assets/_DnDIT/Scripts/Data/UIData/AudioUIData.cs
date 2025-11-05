@@ -1,11 +1,12 @@
-﻿using UnityEngine;
+﻿using DnDInitiativeTracker.GameData;
+using UnityEngine;
 
 namespace DnDInitiativeTracker.UIData
 {
-    public class AudioUIData
+    public class AudioUIData : MediaAssetUIData<AudioClip>
     {
-        public string Name { get; set; }
-        public string FilePath { get; set; }
-        public AudioClip AudioClip { get; set; }
+        public AudioUIData(MediaAssetData assetData, AudioClip data) : base(assetData, data)
+        {
+        }
     }
 }
