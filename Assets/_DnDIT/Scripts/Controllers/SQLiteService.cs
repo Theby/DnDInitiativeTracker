@@ -18,6 +18,11 @@ namespace DnDInitiativeTracker.Service
         {
             var dataBaseFullName = Path.ChangeExtension(databaseName, "db");
             _dataBasePath = Path.Combine(Application.persistentDataPath, dataBaseFullName);
+
+#if UNITY_EDITOR
+            Debug.Log($"SQLite path: {_dataBasePath}");
+#endif
+
             _dataBase = new SQLiteConnection(_dataBasePath);
         }
 

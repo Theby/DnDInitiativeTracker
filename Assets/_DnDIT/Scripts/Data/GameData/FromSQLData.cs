@@ -11,7 +11,7 @@ namespace DnDInitiativeTracker.GameData
 
         protected FromSQLData() => (SQLId, Enabled, InputDate) = (0, true, DateTime.Now.Ticks);
 
-        protected FromSQLData(T sqlData)
+        protected FromSQLData(SQLiteData sqlData)
         {
             SQLId = sqlData?.Id ?? 0;
             Enabled = sqlData?.Enabled ?? true;

@@ -4,7 +4,7 @@ namespace DnDInitiativeTracker.UIData
 {
     public class DMScreenData
     {
-        public CurrentConfigurationUIData CurrentConfigurationUIData { get; set; } = new();
+        public CurrentConfigurationUIData CurrentConfigurationUIData { get; set; }
 
         public List<string> CharacterNames { get; set; } = new();
         public List<string> BackgroundNames { get; set; } = new();

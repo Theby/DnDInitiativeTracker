@@ -280,7 +280,6 @@ namespace DnDInitiativeTracker.ScreenManager
 
         void AddNewBackground()
         {
-            //TODO when to dispose the loaded texture?
             dataManager.GetTextureFromGallery(MediaAssetType.Background, textureUIData =>
             {
                changeBGPopup.ShowNewBackground(textureUIData);
@@ -294,7 +293,6 @@ namespace DnDInitiativeTracker.ScreenManager
 
         void SelectBackground(string bgName)
         {
-            //TODO when to dispose the loaded texture?
             var previewTexture = dataManager.GetTextureFromDataBase(bgName, MediaAssetType.Background);
             changeBGPopup.ShowDropDown(previewTexture);
         }
@@ -302,7 +300,21 @@ namespace DnDInitiativeTracker.ScreenManager
         void ApplyBackground(TextureUIData backgroundUIData)
         {
             changeBGPopup.Hide();
-            
+
+            if (dataManager.IsTextureInDatabase(backgroundUIData))
+            {
+                UpdateCurrentConfigurationBackground(backgroundUIData);
+                return;
+            }
+
+            dataManager.CreateTexture(backgroundUIData, () =>
+            {
+                UpdateCurrentConfigurationBackground(backgroundUIData);
+            });
+        }
+
+        void UpdateCurrentConfigurationBackground(TextureUIData backgroundUIData)
+        {
             _data.CurrentConfigurationUIData.CurrentBackground = backgroundUIData;
             dataManager.UpdateCurrentConfiguration(_data.CurrentConfigurationUIData);
 

@@ -39,12 +39,14 @@ namespace DnDInitiativeTracker.Controller
             return _sqLiteService.IsTableEmpty<MediaAssetSQLData>();
         }
 
-        public int AddMediaAsset(MediaAssetData mediaAsset)
+        public MediaAssetData AddMediaAsset(MediaAssetData mediaAsset)
         {
             var mediaAssetSQL = mediaAsset.ToSQLData();
             _sqLiteService.Insert(mediaAssetSQL);
 
-            return mediaAssetSQL.Id;
+            mediaAsset.UpdateRegister(mediaAssetSQL);
+
+            return mediaAsset;
         }
 
         public MediaAssetData GetMediaAsset(int id)
@@ -108,24 +110,33 @@ namespace DnDInitiativeTracker.Controller
             return _sqLiteService.IsTableEmpty<CharacterSQLData>();
         }
 
-        public void AddCharacter(CharacterData character)
+        public CharacterData AddCharacter(CharacterData character)
         {
             var sqlData = CreateCharacterSQLData(character);
             _sqLiteService.Insert(sqlData);
+
+            character.UpdateRegister(sqlData);
+
+            return character;
         }
 
         public void UpdateCharacter(CharacterData character)
         {
-            var sqlData = _sqLiteService.GetBy<CharacterSQLData>(c => c.Name == character.Name);
-            if (sqlData != null)
-            {
-                character.UpdateRegister(sqlData);
-            }
-            sqlData = CreateCharacterSQLData(character);
+            RefreshCharacterRegister(character);
+
+            var sqlData = CreateCharacterSQLData(character);
             _sqLiteService.Update(sqlData);
+
+            character.UpdateRegister(sqlData);
         }
 
-        public CharacterData GetCharacterById(int id)
+        void RefreshCharacterRegister(CharacterData character)
+        {
+            var sqlData = _sqLiteService.GetBy<CharacterSQLData>(c => c.Name == character.Name);
+            character.UpdateRegister(sqlData);
+        }
+
+        public CharacterData GetCharacter(int id)
         {
             var sqlData = _sqLiteService.GetById<CharacterSQLData>(id);
             if (sqlData == null)
@@ -135,7 +146,7 @@ namespace DnDInitiativeTracker.Controller
             return character;
         }
 
-        public CharacterData GetCharacterByName(string name)
+        public CharacterData GetCharacter(string name)
         {
             var sqlData = _sqLiteService.GetBy<CharacterSQLData>(c => c.Name == name);
             if (sqlData == null)
@@ -199,16 +210,22 @@ namespace DnDInitiativeTracker.Controller
             return _sqLiteService.IsTableEmpty<CurrentConfigurationSQLData>();
         }
 
-        public void AddCurrentConfiguration(CurrentConfigurationData currentConfiguration)
+        public CurrentConfigurationData AddCurrentConfiguration(CurrentConfigurationData currentConfiguration)
         {
             var configSQL = CreateCurrentConfigurationSQLData(currentConfiguration);
             _sqLiteService.Insert(configSQL);
+
+            currentConfiguration.UpdateRegister(configSQL);
+
+            return currentConfiguration;
         }
 
         public void UpdateCurrentConfiguration(CurrentConfigurationData currentConfiguration)
         {
             var configSQL = CreateCurrentConfigurationSQLData(currentConfiguration);
             _sqLiteService.Update(configSQL);
+
+            currentConfiguration.UpdateRegister(configSQL);
         }
 
         public CurrentConfigurationData GetCurrentConfigurationById(int id)
@@ -217,7 +234,7 @@ namespace DnDInitiativeTracker.Controller
             if (sqlData == null)
                 return null;
 
-            var characterDataList = sqlData.CharacterIdList.Select(GetCharacterById).ToList();
+            var characterDataList = sqlData.CharacterIdList.Select(GetCharacter).ToList();
             var initiativeList = sqlData.InitiativeList.ToList();
             var backgroundData = GetMediaAsset(sqlData.BackgroundId);
             var config = new CurrentConfigurationData(sqlData, characterDataList, initiativeList, backgroundData);
@@ -227,19 +244,9 @@ namespace DnDInitiativeTracker.Controller
 
         CurrentConfigurationSQLData CreateCurrentConfigurationSQLData(CurrentConfigurationData configData)
         {
-            configData.Characters ??= new List<CharacterData>();
             foreach (var character in configData.Characters)
             {
                 UpdateCharacter(character);
-            }
-
-            configData.InitiativeList ??= new List<int>();
-
-            var backgroundSQLData = configData.Background.ToSQLData();
-            if (!ExistsMediaAsset(backgroundSQLData.Id))
-            {
-                _sqLiteService.Insert(backgroundSQLData);
-                configData.Background.UpdateRegister(backgroundSQLData);
             }
 
             var sqlData = configData.ToSQLData();

@@ -18,11 +18,14 @@ namespace DnDInitiativeTracker.Manager
         public CurrentConfigurationUIData CurrentConfigurationUIData { get; set; } //TODO maybe CanvasManager should have this and request the load
 
         SQLiteController _sqlController;
-        int _defaultAvatarID;
-        int _defaultAudio1Id;
-        int _defaultAudio2Id;
-        int _defaultAudio3Id;
-        int _defaultBackgroundID;
+        MediaAssetData _defaultAvatarData;
+        MediaAssetData _defaultAudio1Data;
+        MediaAssetData _defaultAudio2Data;
+        MediaAssetData _defaultAudio3Data;
+        MediaAssetData _defaultBackgroundData;
+
+        readonly Dictionary<string, TextureUIData> _textureUIDataCache = new();
+        readonly Dictionary<string, AudioUIData> _audioUIDataCache = new();
 
         public IEnumerator Initialize()
         {
@@ -37,6 +40,17 @@ namespace DnDInitiativeTracker.Manager
         {
             StopAllCoroutines();
             _sqlController?.Dispose();
+
+            foreach (var textureUIData in _textureUIDataCache.Values)
+            {
+                Texture.Destroy(textureUIData.Data);
+            }
+
+            foreach (var audioUIData in _audioUIDataCache.Values)
+            {
+                audioUIData.Data.UnloadAudioData();
+                AudioClip.Destroy(audioUIData.Data);
+            }
         }
 
         #region Defaults
@@ -53,42 +67,42 @@ namespace DnDInitiativeTracker.Manager
             if (!_sqlController.IsMediaAssetsTableEmpty())
                 return;
 
-            var defaultAvatarData = new MediaAssetData
+            _defaultAvatarData = new MediaAssetData
             {
                 Name = "DefaultAvatar",
                 Type = MediaAssetType.Avatar,
                 Path = Path.Combine(Application.streamingAssetsPath, "Textures/DefaultAvatar.jpg")
             };
-            var defaultAudio1Data = new MediaAssetData
+            _defaultAudio1Data = new MediaAssetData
             {
                 Name = "DefaultAudio1",
                 Type = MediaAssetType.Audio,
                 Path = Path.Combine(Application.streamingAssetsPath, "Audios/DefaultAudio1.mp3")
             };
-            var defaultAudio2Data = new MediaAssetData
+            _defaultAudio2Data = new MediaAssetData
             {
                 Name = "DefaultAudio2",
                 Type = MediaAssetType.Audio,
                 Path = Path.Combine(Application.streamingAssetsPath, "Audios/DefaultAudio2.mp3")
             };
-            var defaultAudio3Data = new MediaAssetData
+            _defaultAudio3Data = new MediaAssetData
             {
                 Name = "DefaultAudio3",
                 Type = MediaAssetType.Audio,
                 Path = Path.Combine(Application.streamingAssetsPath, "Audios/DefaultAudio3.mp3")
             };
-            var defaultBackground = new MediaAssetData
+            _defaultBackgroundData = new MediaAssetData
             {
                 Name = "DefaultBG",
                 Type = MediaAssetType.Background,
                 Path = Path.Combine(Application.streamingAssetsPath, "Textures/DefaultBG.jpg")
             };
 
-            _defaultAvatarID = _sqlController.AddMediaAsset(defaultAvatarData);
-            _defaultAudio1Id = _sqlController.AddMediaAsset(defaultAudio1Data);
-            _defaultAudio2Id = _sqlController.AddMediaAsset(defaultAudio2Data);
-            _defaultAudio3Id = _sqlController.AddMediaAsset(defaultAudio3Data);
-            _defaultBackgroundID = _sqlController.AddMediaAsset(defaultBackground);
+            _sqlController.AddMediaAsset(_defaultAvatarData);
+            _sqlController.AddMediaAsset(_defaultAudio1Data);
+            _sqlController.AddMediaAsset(_defaultAudio2Data);
+            _sqlController.AddMediaAsset(_defaultAudio3Data);
+            _sqlController.AddMediaAsset(_defaultBackgroundData);
         }
 
         void AddDefaultCharacter()
@@ -96,21 +110,17 @@ namespace DnDInitiativeTracker.Manager
             if (!_sqlController.IsCharacterTableEmpty())
                 return;
 
-            var defaultAvatar = _sqlController.GetMediaAsset(_defaultAvatarID);
-            var defaultAudios = new List<MediaAssetData>
-            {
-                _sqlController.GetMediaAsset(_defaultAudio1Id),
-                _sqlController.GetMediaAsset(_defaultAudio2Id),
-                _sqlController.GetMediaAsset(_defaultAudio3Id),
-            };
-
             var defaultCharacter = new CharacterData
             {
-                Avatar = defaultAvatar,
+                Avatar = _defaultAvatarData,
                 Name = "????",
-                AudioList = defaultAudios,
+                AudioList = new List<MediaAssetData>
+                {
+                    _defaultAudio1Data,
+                    _defaultAudio2Data,
+                    _defaultAudio3Data,
+                },
             };
-
             _sqlController.AddCharacter(defaultCharacter);
         }
 
@@ -119,12 +129,11 @@ namespace DnDInitiativeTracker.Manager
             if (!_sqlController.IsCurrentConfigurationTableEmpty())
                 return;
 
-            var defaultBackground = _sqlController.GetMediaAsset(_defaultBackgroundID);
             var defaultConfig = new CurrentConfigurationData
             {
                 Characters = new List<CharacterData>(),
                 InitiativeList = new List<int>(),
-                Background = defaultBackground,
+                Background = _defaultBackgroundData,
             };
             _sqlController.AddCurrentConfiguration(defaultConfig);
         }
@@ -169,7 +178,15 @@ namespace DnDInitiativeTracker.Manager
             NativeGalleryController.GetImagePathFromGallery(path =>
             {
                 var fileName = Path.GetFileNameWithoutExtension(path);
-                var textureUIData = GetTextureFromPath(fileName, path, type);
+
+                var mediaAsset = new MediaAssetData
+                {
+                    Name = fileName,
+                    Path = path,
+                    Type = type,
+                };
+
+                var textureUIData = GetTextureFromPath(mediaAsset);
                 onComplete?.Invoke(textureUIData);
             });
         }
@@ -177,35 +194,77 @@ namespace DnDInitiativeTracker.Manager
         public TextureUIData GetTextureFromDataBase(string fileName, MediaAssetType type)
         {
             var mediaAsset = _sqlController.GetMediaAsset((int)type, fileName);
-            var textureUIData = GetTextureFromPath(mediaAsset.Name, mediaAsset.Path, type);
+            var textureUIData = GetTextureFromPath(mediaAsset);
 
             return textureUIData;
         }
 
-        TextureUIData GetTextureFromPath(string fileName, string fullPath, MediaAssetType type)
+        TextureUIData GetTextureFromPath(MediaAssetData mediaAssetData)
         {
-            var texture = NativeGalleryController.GetImageFromPath(fullPath);
-            texture.name = fileName;
+            var cacheTexture = GetTextureFromCache(mediaAssetData.Path);
+            if (cacheTexture != null)
+                return cacheTexture;
 
-            var textureMediaAssetData = new MediaAssetData
-            {
-                Name = fileName,
-                Path = fullPath,
-                Type = type,
-            };
+            var texture = NativeGalleryController.GetImageFromPath(mediaAssetData.Path);
+            texture.name = mediaAssetData.Name;
 
-            var textureUIData = new TextureUIData(textureMediaAssetData, texture);
+            var textureUIData = new TextureUIData(mediaAssetData, texture);
+            AddTextureToCache(textureUIData);
+
             return textureUIData;
         }
 
-        public void CreateTexture(TextureUIData textureUIData)
+        TextureUIData GetTextureFromCache(string fullPath)
+        {
+            TextureUIData cacheUIData = null;
+            if (_textureUIDataCache.TryGetValue(fullPath, out var textureUIData))
+            {
+                cacheUIData = textureUIData;
+            }
+
+            return cacheUIData;
+        }
+
+        void AddTextureToCache(TextureUIData textureUIData)
+        {
+            if (_textureUIDataCache.TryAdd(textureUIData.Path, textureUIData))
+                return;
+
+            Debug.LogError("Failed to add texture to cache, already exists: " + textureUIData.Path);
+        }
+
+        void ReplaceTextureInCache(string oldPath, TextureUIData newTextureUIData)
+        {
+            if (oldPath == newTextureUIData.Path)
+                return;
+
+            _textureUIDataCache.Remove(oldPath);
+            AddTextureToCache(newTextureUIData);
+        }
+
+        public void CreateTexture(TextureUIData textureUIData, Action onComplete)
         {
             NativeGalleryController.SaveImageToGallery(textureUIData.Path, (fullPath, fileName) =>
             {
+                var oldPath = textureUIData.Path;
                 textureUIData.Name = fileName;
                 textureUIData.Path = fullPath;
-                _sqlController.AddMediaAsset(textureUIData.ToMediaAssetData());
+
+                ReplaceTextureInCache(oldPath, textureUIData);
+
+                var mediaAsset = textureUIData.ToMediaAssetData();
+                _sqlController.AddMediaAsset(mediaAsset);
+
+                textureUIData.UpdateMediaData(mediaAsset);
+
+                onComplete?.Invoke();
             });
+        }
+
+        public bool IsTextureInDatabase(TextureUIData textureUIData)
+        {
+            var mediaAsset = textureUIData.ToMediaAssetData();
+            return _sqlController.ExistsMediaAsset(mediaAsset.SQLId);
         }
 
         #endregion
@@ -222,61 +281,118 @@ namespace DnDInitiativeTracker.Manager
             NativeGalleryController.GetAudioPathFromGallery(path =>
             {
                 var fileName = Path.GetFileNameWithoutExtension(path);
-                GetAudioClipFromPath(fileName, path, onComplete);
+                var mediaAssetData = new MediaAssetData
+                {
+                    Name = fileName,
+                    Path = path,
+                    Type = MediaAssetType.Audio,
+                };
+                
+                GetAudioClipFromPath(mediaAssetData, onComplete);
             });
         }
 
         public IEnumerator GetAudioClipFromDataBase(string audioName, Action<AudioUIData> onComplete)
         {
             var mediaAsset = _sqlController.GetMediaAsset((int)MediaAssetType.Audio, audioName);
-            yield return GetAudioClipFromPath(mediaAsset.Name, mediaAsset.Path, audioUIData =>
+            yield return GetAudioClipFromPath(mediaAsset, audioUIData =>
             {
                 onComplete?.Invoke(audioUIData);
             });
         }
 
-        async Task<AudioUIData> GetAudioClipFromPath(string fileName, string fullPath, Action<AudioUIData> onComplete = null)
+        async Task<AudioUIData> GetAudioClipFromPath(MediaAssetData mediaAssetData, Action<AudioUIData> onComplete = null)
         {
-            var audioClip = await NativeGalleryController.GetAudioClipFromPathAsync(fullPath);
+            var cachedAudioClip = GetAudioFromCache(mediaAssetData.Path);
+            if (cachedAudioClip != null)
+            {
+                onComplete?.Invoke(cachedAudioClip);
+                return cachedAudioClip;
+            }
+
+            var audioClip = await NativeGalleryController.GetAudioClipFromPathAsync(mediaAssetData.Path);
             if (audioClip == null)
                 return null;
 
-            audioClip.name = fileName;
+            audioClip.name = mediaAssetData.Name;
 
-            var audioMediaAssetData = new MediaAssetData
-            {
-                Name = fileName,
-                Path = fullPath,
-                Type = MediaAssetType.Audio,
-            };
+            var audioUIData = new AudioUIData(mediaAssetData, audioClip);
+            AddAudioToCache(audioUIData);
 
-            var audioUIData = new AudioUIData(audioMediaAssetData, audioClip);
             onComplete?.Invoke(audioUIData);
             return audioUIData;
         }
 
-        void CreateAudio(AudioUIData audioUIData)
+        AudioUIData GetAudioFromCache(string fullPath)
+        {
+            AudioUIData cacheUIData = null;
+            if (_audioUIDataCache.TryGetValue(fullPath, out var audioUIData))
+            {
+                cacheUIData = audioUIData;
+            }
+
+            return cacheUIData;
+        }
+
+        void AddAudioToCache(AudioUIData audioUIData)
+        {
+            if (_audioUIDataCache.TryAdd(audioUIData.Path, audioUIData))
+                return;
+
+            Debug.LogError("Failed to add audio to cache, already exists: " + audioUIData.Path);
+        }
+
+        void ReplaceAudioInCache(string oldPath, AudioUIData audioUIData)
+        {
+            _audioUIDataCache.Remove(oldPath);
+            _audioUIDataCache.Add(audioUIData.Path, audioUIData);
+        }
+
+        void CreateAudio(AudioUIData audioUIData, Action onComplete)
         {
             NativeGalleryController.SaveImageToGallery(audioUIData.Path, (fullPath, fileName) =>
             {
+                var oldPath = audioUIData.Path;
                 audioUIData.Name = fileName;
                 audioUIData.Path = fullPath;
-                _sqlController.AddMediaAsset(audioUIData.ToMediaAssetData());
+
+                ReplaceAudioInCache(oldPath, audioUIData);
+
+                var mediaAsset = audioUIData.ToMediaAssetData();
+                _sqlController.AddMediaAsset(mediaAsset);
+
+                audioUIData.UpdateMediaData(mediaAsset);
+
+                onComplete?.Invoke();
             });
+        }
+
+        public bool IsAudioInDatabase(AudioUIData audioUIData)
+        {
+            var mediaAsset = audioUIData.ToMediaAssetData();
+            return _sqlController.ExistsMediaAsset(mediaAsset.SQLId);
         }
 
         #endregion
 
         #region Character
 
-         public List<string> GetAllCharacterNames()
+        public List<string> GetAllCharacterNames()
         {
             return _sqlController.GetAllCharactersNames();
         }
 
         public IEnumerator GetCharacterFromDataBase(string characterName, Action<CharacterUIData> onComplete)
         {
-            var characterData = _sqlController.GetCharacterByName(characterName);
+            var characterData = _sqlController.GetCharacter(characterName);
+            yield return GetCharacterFromDataBase(characterData, characterUIData =>
+            {
+                onComplete?.Invoke(characterUIData);
+            });
+        }
+
+        public IEnumerator GetCharacterFromDataBase(CharacterData characterData, Action<CharacterUIData> onComplete)
+        {
             yield return GetCharacterUIDataAsync(characterData, characterUIData =>
             {
                 onComplete?.Invoke(characterUIData);
@@ -285,12 +401,12 @@ namespace DnDInitiativeTracker.Manager
 
         async Task<CharacterUIData> GetCharacterUIDataAsync(CharacterData characterData, Action<CharacterUIData> onComplete = null)
         {
-            var avatarUIData = GetTextureFromPath(characterData.Avatar.Name, characterData.Avatar.Path, characterData.Avatar.Type);
+            var avatarUIData = GetTextureFromPath(characterData.Avatar);
             var characterName = characterData.Name;
             var audioClips = new List<AudioUIData>();
             foreach (var audioData in characterData.AudioList)
             {
-                var audioUIData = await GetAudioClipFromPath(audioData.Name, audioData.Path);
+                var audioUIData = await GetAudioClipFromPath(audioData);
                 audioClips.Add(audioUIData);
             }
 
@@ -308,12 +424,20 @@ namespace DnDInitiativeTracker.Manager
         public void CreateCharacter(CharacterUIData characterUIData)
         {
             var characterData = characterUIData.ToCharacterData();
+            //TODO somewhere in this flow we are missing creating the local copy
+            //of the avatar texture, this process should probably take care
+            //of both creating the local texture and adding that texture to SQLite
+            //TODO also applies for audio
             _sqlController.AddCharacter(characterData);
         }
 
         public void UpdateCharacter(CharacterUIData characterUIData)
         {
             var characterData = characterUIData.ToCharacterData();
+            //TODO somewhere in this flow we are missing creating the local copy
+            //of the avatar texture, this process should probably take care
+            //of both creating the local texture and adding that texture to SQLite
+            //TODO also applies for audio
             _sqlController.UpdateCharacter(characterData);
         }
 
@@ -328,25 +452,16 @@ namespace DnDInitiativeTracker.Manager
             var currentEncounter = new List<CharacterUIData>();
             foreach (var character in config.Characters)
             {
-                yield return GetCharacterFromDataBase(character.Name, characterUIData =>
+                yield return GetCharacterFromDataBase(character, characterUIData =>
                 {
                     currentEncounter.Add(characterUIData);
                 });
             }
 
             var initiativeList = config.InitiativeList;
+            var backgroundUIData = GetTextureFromPath(config.Background);
 
-            var bgName = config.Background.Name;
-            var bgPath = config.Background.Path;
-            var bgType = config.Background.Type;
-            var backgroundUIData = GetTextureFromPath(bgName, bgPath, bgType);
-
-            var uiData = new CurrentConfigurationUIData
-            {
-                CurrentEncounter = currentEncounter,
-                InitiativeList = initiativeList,
-                CurrentBackground = backgroundUIData,
-            };
+            var uiData = new CurrentConfigurationUIData(config, currentEncounter, initiativeList, backgroundUIData);
             onComplete?.Invoke(uiData);
         }
 
