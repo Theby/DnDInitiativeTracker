@@ -138,7 +138,7 @@ namespace DnDInitiativeTracker.UI
             if (layout == null)
                 return null;
 
-            var audioList = layout.Data.AudioClips;
+            var audioList = layout.Data.AudioList;
             var randomIndex = Random.Range(0, audioList.Count);
             var audioClip = audioList[randomIndex];
 

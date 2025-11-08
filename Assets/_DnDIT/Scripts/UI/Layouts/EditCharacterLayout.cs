@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using DnDInitiativeTracker.Extensions;
 using DnDInitiativeTracker.UIData;
 using TMPro;
 using UnityEngine;
@@ -8,56 +8,192 @@ using UnityEngine.UI;
 
 public class EditCharacterLayout : MonoBehaviour
 {
-    [SerializeField] Button changeImageButton;
-    [SerializeField] RawImage avatarImage;
+    [SerializeField] SelectAssetLayout selectAvatarLayout;
+    [SerializeField] RawImage previewAvatar;
     [SerializeField] TMP_InputField nameInputField;
-    [SerializeField] List<SelectAudioLayout> audioLayouts;
+    [SerializeField] Button addAudioLayoutButton;
+    [SerializeField] ScrollRect scrollRect;
+    [SerializeField] GameObject scrollContent;
+    [SerializeField] SelectAudioLayout selectAudioLayoutPrefab;
 
-    public event Action OnChangeImage;
-    public event Action<string> OnNameChanged;
+    public CharacterUIData EditCharacter { get; private set; }
+
+    public event Action OnAddNewAvatar;
+    public event Action<string> OnAvatarSelectionChanged;
+    public event Action OnAvatarRemoved;
+    public event Action OnAddAudioLayout;
+    public event Action<int> OnAudioLayoutRemoved;
     public event Action<int> OnAddNewAudio;
     public event Action<int, string> OnAudioSelectionChanged;
-    public event Action<int> OnPlayAudio;
+    public event Action<int> OnAudioRemoved;
+    public event Action<AudioClip> OnPlayAudio;
+
+    DMScreenData _data;
+
+    readonly List<SelectAudioLayout> _layoutList = new();
 
     public void Initialize()
     {
-        changeImageButton.onClick.AddListener(ChangeImageHandler);
-        nameInputField.onValueChanged.AddListener(OnNameChangedHandler);
+        selectAvatarLayout.Initialize();
+        selectAvatarLayout.OnAddNew += AddNewAvatarHandler;
+        selectAvatarLayout.OnSelectionChanged += AvatarSelectionChangedHandler;
+        selectAvatarLayout.OnRemove += AvatarRemovedHandler;
 
-        for (var i = 0; i < audioLayouts.Count; i++)
+        nameInputField.text = string.Empty;
+        nameInputField.onValueChanged.AddListener(NameChangedHandler);
+
+        addAudioLayoutButton.onClick.AddListener(AddAudioLayoutHandler);
+    }
+
+    public void SetData(DMScreenData data, CharacterUIData editCharacter)
+    {
+        _data = data;
+        EditCharacter = editCharacter;
+
+        selectAvatarLayout.SetData(editCharacter.Avatar.Name, _data.AvatarNames);
+        nameInputField.text = EditCharacter.Name;
+
+        _layoutList.Clear();
+        scrollContent.transform.DestroyChildren();
+        foreach (var audioUIData in EditCharacter.AudioList)
         {
-            var layoutIndex = i;
-            var audioLayout = audioLayouts[layoutIndex];
-
-            audioLayout.Initialize();
-            audioLayout.OnAddNew += () => OnAddNewAudio?.Invoke(layoutIndex);
-            audioLayout.OnSelectionChanged += audioName => OnAudioSelectionChanged?.Invoke(layoutIndex, audioName);;
-            audioLayout.OnPlayAudio += () => OnPlayAudio?.Invoke(layoutIndex);
+            InstantiateSelectAudioLayout(audioUIData);
         }
     }
 
-    public void SetData(CharacterUIData data, List<string> audioClipNames)
+    public void Show()
     {
-        avatarImage.texture = data.Avatar.Data;
-        nameInputField.text = string.IsNullOrEmpty(nameInputField.text) ? data.Name : nameInputField.text;
-
-        for (var i = 0; i < audioLayouts.Count; i++)
-        {
-            var audioClip = data.AudioClips?.ElementAtOrDefault(i);
-            var audioClipName = audioClip?.Name ?? string.Empty;
-
-            var selectAudioLayout = audioLayouts[i];
-            selectAudioLayout.SetData(audioClipName, audioClipNames);
-        }
+        selectAvatarLayout.ShowDropDown();
     }
 
-    void ChangeImageHandler()
+    public void Refresh()
     {
-        OnChangeImage?.Invoke();
+        previewAvatar.texture = EditCharacter.Avatar.Data;
     }
 
-    void OnNameChangedHandler(string input)
+    public void ShowNewAvatar(TextureUIData avatarUIData)
     {
-        OnNameChanged?.Invoke(input);
+        selectAvatarLayout.ShowNewAsset(avatarUIData.Name);
+
+        EditCharacter.Avatar = avatarUIData;
+        Refresh();
+    }
+
+    public void ShowAvatarDropdown(TextureUIData avatarUIData)
+    {
+        selectAvatarLayout.ShowDropDown();
+
+        EditCharacter.Avatar = avatarUIData;
+        Refresh();
+    }
+
+    public void ReselectAvatarDropDown()
+    {
+        selectAvatarLayout.ReselectDropDown();
+    }
+
+    public void AddAudioLayout(AudioUIData audioUIData)
+    {
+        InstantiateSelectAudioLayout(audioUIData);
+        EditCharacter.AudioList.Add(audioUIData);
+    }
+
+    void InstantiateSelectAudioLayout(AudioUIData audioUIData)
+    {
+        var selectAudioLayout = Instantiate(selectAudioLayoutPrefab, scrollContent.transform);
+
+        selectAudioLayout.Initialize();
+        selectAudioLayout.SetData(audioUIData, _data.AudioNames);
+        selectAudioLayout.OnRemoveLayout += AudioLayoutRemovedHandler;
+        selectAudioLayout.OnAddNew += AddNewAudioHandler;
+        selectAudioLayout.OnSelectionChanged += AudioSelectionChangedHandler;
+        selectAudioLayout.OnRemoveNewAudio += AudioRemovedHandler;
+        selectAudioLayout.OnPlayAudio += PlayAudioHandler;
+
+        selectAudioLayout.Show();
+
+        _layoutList.Add(selectAudioLayout);
+    }
+
+    public void RemoveAudioLayout(int index)
+    {
+        var layoutToRemove = _layoutList[index];
+
+        _layoutList.RemoveAt(index);
+        Destroy(layoutToRemove.gameObject);
+
+        EditCharacter.AudioList.RemoveAt(index);
+    }
+
+    public void ShowNewAudio(int index, AudioUIData audioUIData)
+    {
+        var audioLayout = _layoutList[index];
+        audioLayout.ShowNewAudio(audioUIData);
+
+        EditCharacter.AudioList[index] = audioUIData;
+    }
+
+    public void ShowAudioDropdown(int index, AudioUIData audioUIData)
+    {
+        var audioLayout = _layoutList[index];
+        audioLayout.ShowDropDown(audioUIData);
+
+        EditCharacter.AudioList[index] = audioUIData;
+    }
+
+    public void ReselectAudioDropDown(int index)
+    {
+        var audioLayout = _layoutList[index];
+        audioLayout.ReselectDropDown();
+    }
+
+    void AudioLayoutRemovedHandler(int index)
+    {
+        OnAudioLayoutRemoved?.Invoke(index);
+    }
+
+    void AddNewAudioHandler(int index)
+    {
+        OnAddNewAudio?.Invoke(index);
+    }
+
+    void AudioSelectionChangedHandler(int index, string audioName)
+    {
+        OnAudioSelectionChanged?.Invoke(index, audioName);
+    }
+
+    void AudioRemovedHandler(int index)
+    {
+        OnAudioRemoved?.Invoke(index);
+    }
+
+    void PlayAudioHandler(AudioClip audioClip)
+    {
+        OnPlayAudio?.Invoke(audioClip);
+    }
+
+    void AddNewAvatarHandler()
+    {
+        OnAddNewAvatar?.Invoke();
+    }
+
+    void AvatarSelectionChangedHandler(string avatarName)
+    {
+        OnAvatarSelectionChanged?.Invoke(avatarName);
+    }
+
+    void AvatarRemovedHandler()
+    {
+        OnAvatarRemoved?.Invoke();
+    }
+
+    void NameChangedHandler(string input)
+    {
+        EditCharacter.Name = input;
+    }
+
+    void AddAudioLayoutHandler()
+    {
+        OnAddAudioLayout?.Invoke();
     }
 }

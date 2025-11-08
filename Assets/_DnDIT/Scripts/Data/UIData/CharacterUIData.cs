@@ -7,13 +7,17 @@ namespace DnDInitiativeTracker.UIData
     {
         public TextureUIData Avatar { get; set; }
         public string Name { get; set; }
-        public List<AudioUIData> AudioClips { get; set; }
+        public List<AudioUIData> AudioList { get; set; }
 
-        public void SetData(CharacterUIData characterUIData)
+        readonly CharacterData _characterData;
+
+        public CharacterUIData(CharacterData characterData, TextureUIData avatarData, string name,
+            List<AudioUIData> audioList)
         {
-            Avatar = characterUIData.Avatar;
-            Name = characterUIData.Name;
-            AudioClips = characterUIData.AudioClips;
+            _characterData = characterData;
+            Avatar = avatarData;
+            Name = name;
+            AudioList = audioList;
         }
 
         public CharacterData ToCharacterData()
@@ -21,7 +25,7 @@ namespace DnDInitiativeTracker.UIData
             var avatarData = Avatar.ToMediaAssetData();
             var characterName = Name;
             var audioDataList = new List<MediaAssetData>();
-            foreach (var audioUIData in AudioClips)
+            foreach (var audioUIData in AudioList)
             {
                 if (audioUIData.Data == null)
                     continue;
@@ -32,6 +36,9 @@ namespace DnDInitiativeTracker.UIData
 
             return new CharacterData
             {
+                SQLId = _characterData.SQLId,
+                Enabled = _characterData.Enabled,
+                InputDate = _characterData.InputDate,
                 Avatar = avatarData,
                 Name = characterName,
                 AudioList = audioDataList,

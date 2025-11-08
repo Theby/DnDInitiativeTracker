@@ -25,7 +25,6 @@ namespace DnDInitiativeTracker.ScreenManager
         public event Action OnGoBack;
 
         readonly DMScreenData _data = new();
-        readonly CharacterUIData _editableCharacterUIData = new();
 
         public void Initialize()
         {
@@ -49,16 +48,22 @@ namespace DnDInitiativeTracker.ScreenManager
             dmScreen.Show();
         }
 
-        void ShowCreateCharacterPopup()
+        IEnumerator ShowCreateCharacterPopup()
         {
-            createCharacterPopup.SetData(_editableCharacterUIData, _data);
-            createCharacterPopup.Show();
+            yield return dataManager.GetDefaultCharacter(defaultCharacter =>
+            {
+                createCharacterPopup.SetData(_data, defaultCharacter);
+                createCharacterPopup.Show();
+            });
         }
 
-        void ShowEditCharacterPopup()
+        IEnumerator ShowEditCharacterPopup()
         {
-            editCharacterPopup.SetData(_editableCharacterUIData, _data);
-            editCharacterPopup.Show();
+            yield return dataManager.GetDefaultCharacter(defaultCharacter =>
+            {
+                editCharacterPopup.SetData(_data, defaultCharacter);
+                editCharacterPopup.Show();
+            });
         }
 
         void ShowChangeBGPopup()
@@ -93,6 +98,7 @@ namespace DnDInitiativeTracker.ScreenManager
         {
             _data.CurrentConfigurationUIData = dataManager.CurrentConfigurationUIData;
             _data.CharacterNames = dataManager.GetAllCharacterNames();
+            _data.AvatarNames = dataManager.GetAllAvatarNames();
             _data.BackgroundNames = dataManager.GetAllBackgroundNames();
             _data.AudioNames = dataManager.GetAllAudioNames();
         }
@@ -124,6 +130,13 @@ namespace DnDInitiativeTracker.ScreenManager
                 changeBGPopup.Refresh();
             }
         }
+
+        void GoBack()
+        {
+            OnGoBack?.Invoke();
+        }
+
+        #region Encounter
 
         void AddCharacterToEncounter()
         {
@@ -164,119 +177,170 @@ namespace DnDInitiativeTracker.ScreenManager
             RefreshData();
         }
 
-        void ChangeEditableCharacterAvatar()
+        #endregion
+
+        //TODO between Create and Edit there are a lot of common methods and copied code
+
+        #region Create Character
+
+        void AddNewAvatar()
         {
             dataManager.GetTextureFromGallery(MediaAssetType.Avatar, textureUIData =>
             {
-                if (_editableCharacterUIData.Avatar.Data != null)
-                {
-                    Destroy(_editableCharacterUIData.Avatar.Data);
-                }
-
-                _editableCharacterUIData.Avatar = textureUIData;
-
-                Refresh();
+                createCharacterPopup.ShowNewAvatar(textureUIData);
             });
         }
 
-        void ChangeEditableCharacterName(string newName)
+        void SelectAvatar(string avatarName)
         {
-            _editableCharacterUIData.Name = newName;
+            var previewTexture = dataManager.GetTextureFromDataBase(avatarName, MediaAssetType.Avatar);
+            createCharacterPopup.ShowAvatarDropdown(previewTexture);
         }
 
-        void FetchAudioClipFromGallery(int index)
+        void RemoveNewAvatar()
+        {
+            createCharacterPopup.ReselectAvatarDropDown();
+        }
+
+        IEnumerator AddAudioLayout()
+        {
+            yield return dataManager.GetDefaultAudio(audioUIData =>
+            {
+                createCharacterPopup.AddAudioLayout(audioUIData);
+            });
+        }
+
+        void RemoveAudioLayout(int index)
+        {
+            createCharacterPopup.RemoveAudioLayout(index);
+        }
+
+        void AddNewAudio(int index)
         {
             dataManager.GetAudioClipFromGallery(audioUIData =>
             {
-                UpdateEditableCharacterUIAudioData(index, audioUIData);
+                createCharacterPopup.ShowNewAudio(index, audioUIData);
             });
         }
 
-        IEnumerator UpdateEditableCharacterAudioClip(int index, string audioName)
+        IEnumerator SelectAudio(int index, string audioName)
         {
-            var currentAudioClip = _editableCharacterUIData.AudioClips.ElementAtOrDefault(index);
-            if (currentAudioClip != null && currentAudioClip.Name == audioName)
-                yield break;
-
             yield return dataManager.GetAudioClipFromDataBase(audioName, audioUIData =>
             {
-                UpdateEditableCharacterUIAudioData(index, audioUIData);
+                createCharacterPopup.ShowAudioDropdown(index, audioUIData);
             });
         }
 
-        void UpdateEditableCharacterUIAudioData(int index, AudioUIData audioUIData)
+        void RemoveNewAudio(int index)
         {
-            var currentClip = _editableCharacterUIData.AudioClips.ElementAtOrDefault(index);
-            if (currentClip != null)
-            {
-                currentClip.Data.UnloadAudioData();
-                AudioClip.Destroy(currentClip.Data);
-            }
-
-            //TODO all this editable maybe should be moved somewhere else
-            //Also maybe we need some Data that holds the AudioClip/Texture along the MediaAsset
-            //consider making UIData classes work like that
-            _editableCharacterUIData.AudioClips[index] = audioUIData;
-
-            //TODO hackie, we should separate adding an Asset vs selection already added assets.
-            //one is the add button with the field to show the path, the other is the dropdown
-            //you use one or the other in the ui
-            RefreshData();
-            if (!_data.AudioNames.Contains(audioUIData.Name))
-            {
-                _data.AudioNames.Add(audioUIData.Name);
-            }
-
-            RefreshPopup();
+            createCharacterPopup.ReselectAudioDropDown(index);
         }
 
-        void PlayAudio(int index)
+        void PlayAudio(AudioClip audioClip)
         {
-            var audioClip = _editableCharacterUIData.AudioClips.ElementAtOrDefault(index);
-            if (audioClip != null)
-            {
-                audioSource.PlayOneShot(audioClip.Data);
-            }
+            audioSource.PlayOneShot(audioClip);
         }
 
-        void SaveNewCharacter()
+        void SaveNewCharacter(CharacterUIData newCharacterUIData)
         {
-            //TODO check that all required data is there before saving
-            //for now we assume it is
-            dataManager.CreateCharacter(_editableCharacterUIData);
+            if (string.IsNullOrEmpty(newCharacterUIData.Name) || dataManager.IsCharacterInDatabase(newCharacterUIData))
+                return;
 
-            HidePopups();
-            Refresh();
-            //TODO should clear and destroy data after this?
+            createCharacterPopup.Hide();
+            StartCoroutine(dataManager.CreateCharacter(newCharacterUIData, Refresh));
         }
 
-        IEnumerator CharacterSelected(int index)
+        #endregion
+
+        #region Edit Character
+
+        IEnumerator CharacterSelected(string characterName)
         {
-            //consider getting the name from the dropdown instead of index
-            if (_data.CharacterNames.Count <= index)
-                yield break;
-
-            var characterName = _data.CharacterNames[index];
-            if (_editableCharacterUIData.Name == characterName)
-                yield break;
-
             yield return dataManager.GetCharacterFromDataBase(characterName, characterUIData =>
             {
-                _editableCharacterUIData.SetData(characterUIData);
-                RefreshPopup();
+                editCharacterPopup.UpdateEditCharacter(characterUIData);
             });
         }
 
-        void UpdateCharacter()
+        void AddNewAvatarEdit()
         {
-            //TODO check that all required data is there before saving
-            //for now we assume it is
-            dataManager.UpdateCharacter(_editableCharacterUIData);
-
-            HidePopups();
-            Refresh();
-            //TODO should clear and destroy data after this?
+            dataManager.GetTextureFromGallery(MediaAssetType.Avatar, textureUIData =>
+            {
+                editCharacterPopup.ShowNewAvatar(textureUIData);
+            });
         }
+
+        void SelectAvatarEdit(string avatarName)
+        {
+            var previewTexture = dataManager.GetTextureFromDataBase(avatarName, MediaAssetType.Avatar);
+            editCharacterPopup.ShowAvatarDropdown(previewTexture);
+        }
+
+        void RemoveNewAvatarEdit()
+        {
+            editCharacterPopup.ReselectAvatarDropDown();
+        }
+
+        IEnumerator AddAudioLayoutEdit()
+        {
+            yield return dataManager.GetDefaultAudio(audioUIData =>
+            {
+                editCharacterPopup.AddAudioLayout(audioUIData);
+            });
+        }
+
+        void RemoveAudioLayoutEdit(int index)
+        {
+            editCharacterPopup.RemoveAudioLayout(index);
+        }
+
+        void AddNewAudioEdit(int index)
+        {
+            dataManager.GetAudioClipFromGallery(audioUIData =>
+            {
+                editCharacterPopup.ShowNewAudio(index, audioUIData);
+            });
+        }
+
+        IEnumerator SelectAudioEdit(int index, string audioName)
+        {
+            yield return dataManager.GetAudioClipFromDataBase(audioName, audioUIData =>
+            {
+                editCharacterPopup.ShowAudioDropdown(index, audioUIData);
+            });
+        }
+
+        void RemoveNewAudioEdit(int index)
+        {
+            editCharacterPopup.ReselectAudioDropDown(index);
+        }
+
+        void PlayAudioEdit(AudioClip audioClip)
+        {
+            audioSource.PlayOneShot(audioClip);
+        }
+
+        void SaveNewCharacterEdit(CharacterUIData newCharacterUIData)
+        {
+            if (string.IsNullOrEmpty(newCharacterUIData.Name) || dataManager.IsCharacterInDatabase(newCharacterUIData))
+                return;
+
+            editCharacterPopup.Hide();
+            StartCoroutine(dataManager.CreateCharacter(newCharacterUIData, Refresh));
+        }
+
+        void UpdateCharacter(CharacterUIData characterUIData)
+        {
+            if (string.IsNullOrEmpty(characterUIData.Name))
+                return;
+
+            editCharacterPopup.Hide();
+            StartCoroutine(dataManager.UpdateCharacter(characterUIData, Refresh));
+        }
+
+        #endregion
+
+        #region Change Background
 
         void AddNewBackground()
         {
@@ -286,31 +350,22 @@ namespace DnDInitiativeTracker.ScreenManager
             });
         }
 
-        void RemoveNewBackground(string bgName)
-        {
-            SelectBackground(bgName);
-        }
-
         void SelectBackground(string bgName)
         {
             var previewTexture = dataManager.GetTextureFromDataBase(bgName, MediaAssetType.Background);
             changeBGPopup.ShowDropDown(previewTexture);
         }
 
+        void RemoveNewBackground()
+        {
+            changeBGPopup.ReselectBackgroundDropDown();
+        }
+
         void ApplyBackground(TextureUIData backgroundUIData)
         {
             changeBGPopup.Hide();
 
-            if (dataManager.IsTextureInDatabase(backgroundUIData))
-            {
-                UpdateCurrentConfigurationBackground(backgroundUIData);
-                return;
-            }
-
-            dataManager.CreateTexture(backgroundUIData, () =>
-            {
-                UpdateCurrentConfigurationBackground(backgroundUIData);
-            });
+            dataManager.CreateTexture(backgroundUIData, UpdateCurrentConfigurationBackground);
         }
 
         void UpdateCurrentConfigurationBackground(TextureUIData backgroundUIData)
@@ -321,45 +376,24 @@ namespace DnDInitiativeTracker.ScreenManager
             Refresh();
         }
 
-        void GoBack()
-        {
-            OnGoBack?.Invoke();
-        }
+        #endregion
 
         #region Main Inspector Handlers
+
+        public void CreateCharacterButtonInspectorHandler()
+        {
+            StartCoroutine(ShowCreateCharacterPopup());
+        }
+
+        public void EditCharacterButtonInspectorHandler()
+        {
+            StartCoroutine(ShowEditCharacterPopup());
+        }
 
         public void ChangeBGButtonInspectorHandler()
         {
             ShowChangeBGPopup();
         }
-
-        #endregion
-
-        #region ChangeBGPopup Inspector Handlers
-
-        public void AddNewBackgroundButtonInspectorHandler()
-        {
-            AddNewBackground();
-        }
-
-        public void RemoveNewBackgroundButtonInspectorHandler(string bgName)
-        {
-            RemoveNewBackground(bgName);
-        }
-
-        public void BackgroundSelectionDropdownInspectorHandler(string bgName)
-        {
-            SelectBackground(bgName);
-        }
-
-        public void ApplyBackgroundButtonInspectorHandler(TextureUIData backgroundUIData)
-        {
-            ApplyBackground(backgroundUIData);
-        }
-
-        #endregion
-
-        #region Inspector Handlers
 
         public void AddMoreButtonInspectorHandler()
         {
@@ -371,6 +405,15 @@ namespace DnDInitiativeTracker.ScreenManager
             RefreshEncounterOrder();
         }
 
+        public void BackButtonInspectorHandler()
+        {
+            GoBack();
+        }
+
+        #endregion
+
+        #region Encounter Inspector Handlers
+
         public void CharacterEncounterSelectedInspectorHandler(int layoutIndex, string characterName)
         {
             StartCoroutine(CharacterEncounterSelected(layoutIndex, characterName));
@@ -381,59 +424,141 @@ namespace DnDInitiativeTracker.ScreenManager
             RemoveCharacterFromEncounter(positionIndex);
         }
 
-        public void CreateCharacterButtonInspectorHandler()
+        #endregion
+
+        #region CreateCharacterPopup Inspector Handlers
+
+        public void AddNewAvatarInspectorHandler()
         {
-            ShowCreateCharacterPopup();
+            AddNewAvatar();
         }
 
-        public void EditCharacterButtonInspectorHandler()
+        public void AvatarSelectionChangedInspectorHandler(string avatarName)
         {
-            ShowEditCharacterPopup();
+            SelectAvatar(avatarName);
         }
 
-        public void ChangeImageButtonInspectorHandler()
+        public void AvatarRemovedInspectorHandler()
         {
-            ChangeEditableCharacterAvatar();
+            RemoveNewAvatar();
         }
 
-        public void NameChangedInspectorHandler(string newName)
+        public void AddAudioLayoutButtonInspectorHandler()
         {
-            ChangeEditableCharacterName(newName);
+            StartCoroutine(AddAudioLayout());
+        }
+
+        public void RemoveAudioLayoutButtonInspectorHandler(int index)
+        {
+            RemoveAudioLayout(index);
         }
 
         public void AddNewAudioButtonInspectorHandler(int index)
         {
-            FetchAudioClipFromGallery(index);
+            AddNewAudio(index);
         }
 
         public void AudioSelectionChangedInspectorHandler(int index, string audioName)
         {
-            StartCoroutine(UpdateEditableCharacterAudioClip(index, audioName));
+            StartCoroutine(SelectAudio(index, audioName));
         }
 
-        public void PlayAudioButtonInspectorHandler(int index)
+        public void AudioRemovedInspectorHandler(int index)
         {
-            PlayAudio(index);
+            RemoveNewAudio(index);
         }
 
-        public void SaveNewCharacterButtonInspectorHandler()
+        public void PlayAudioButtonInspectorHandler(AudioClip audioClip)
         {
-            SaveNewCharacter();
+            PlayAudio(audioClip);
         }
 
-        public void CharacterSelectedInspectorHandler(int index)
+        public void SaveNewCharacterButtonInspectorHandler(CharacterUIData newCharacterUIData)
         {
-            StartCoroutine(CharacterSelected(index));
+            SaveNewCharacter(newCharacterUIData);
         }
 
-        public void UpdateCharacterButtonInspectorHandler()
+        #endregion
+
+        #region EditCharacterPopup Inspector Handlers
+
+        public void CharacterSelectedInspectorHandler(string characterName)
         {
-            UpdateCharacter();
+            StartCoroutine(CharacterSelected(characterName));
         }
 
-        public void BackButtonInspectorHandler()
+        public void AddNewAvatarInspectorHandlerEdit()
         {
-            GoBack();
+            AddNewAvatarEdit();
+        }
+
+        public void AvatarSelectionChangedInspectorHandlerEdit(string avatarName)
+        {
+            SelectAvatarEdit(avatarName);
+        }
+
+        public void AvatarRemovedInspectorHandlerEdit()
+        {
+            RemoveNewAvatarEdit();
+        }
+
+        public void AddAudioLayoutButtonInspectorHandlerEdit()
+        {
+            StartCoroutine(AddAudioLayoutEdit());
+        }
+
+        public void RemoveAudioLayoutButtonInspectorHandlerEdit(int index)
+        {
+            RemoveAudioLayoutEdit(index);
+        }
+
+        public void AddNewAudioButtonInspectorHandlerEdit(int index)
+        {
+            AddNewAudioEdit(index);
+        }
+
+        public void AudioSelectionChangedInspectorHandlerEdit(int index, string audioName)
+        {
+            StartCoroutine(SelectAudioEdit(index, audioName));
+        }
+
+        public void AudioRemovedInspectorHandlerEdit(int index)
+        {
+            RemoveNewAudioEdit(index);
+        }
+
+        public void PlayAudioButtonInspectorHandlerEdit(AudioClip audioClip)
+        {
+            PlayAudioEdit(audioClip);
+        }
+
+        public void UpdateCharacterButtonInspectorHandler(CharacterUIData characterUIData)
+        {
+            UpdateCharacter(characterUIData);
+        }
+
+        #endregion
+
+        #region ChangeBGPopup Inspector Handlers
+
+        public void AddNewBackgroundButtonInspectorHandler()
+        {
+            AddNewBackground();
+        }
+
+        public void BackgroundSelectionDropdownInspectorHandler(string bgName)
+        {
+            SelectBackground(bgName);
+        }
+
+        public void RemoveNewBackgroundButtonInspectorHandler()
+        {
+            RemoveNewBackground();
+        }
+
+        public void ApplyBackgroundButtonInspectorHandler(TextureUIData backgroundUIData)
+        {
+            ApplyBackground(backgroundUIData);
         }
 
         #endregion

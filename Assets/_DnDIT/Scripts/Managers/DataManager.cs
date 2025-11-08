@@ -13,6 +13,8 @@ namespace DnDInitiativeTracker.Manager
     public class DataManager : MonoBehaviour
     {
         const int CurrentConfigID = 1;
+        const int DefaultCharacterID = 1;
+        const int DefaultAudioID = 2;
 
         public bool IsLoaded { get; private set; }
         public CurrentConfigurationUIData CurrentConfigurationUIData { get; set; } //TODO maybe CanvasManager should have this and request the load
@@ -242,8 +244,14 @@ namespace DnDInitiativeTracker.Manager
             AddTextureToCache(newTextureUIData);
         }
 
-        public void CreateTexture(TextureUIData textureUIData, Action onComplete)
+        public void CreateTexture(TextureUIData textureUIData, Action<TextureUIData> onComplete)
         {
+            if (IsTextureInDatabase(textureUIData))
+            {
+                onComplete?.Invoke(textureUIData);
+                return;
+            }
+
             NativeGalleryController.SaveImageToGallery(textureUIData.Path, (fullPath, fileName) =>
             {
                 var oldPath = textureUIData.Path;
@@ -257,7 +265,7 @@ namespace DnDInitiativeTracker.Manager
 
                 textureUIData.UpdateMediaData(mediaAsset);
 
-                onComplete?.Invoke();
+                onComplete?.Invoke(textureUIData);
             });
         }
 
@@ -274,6 +282,15 @@ namespace DnDInitiativeTracker.Manager
         public List<string> GetAllAudioNames()
         {
             return _sqlController.GetAllMediaTypeNames(MediaAssetType.Audio);
+        }
+
+        public IEnumerator GetDefaultAudio(Action<AudioUIData> onComplete)
+        {
+            var mediaAsset = _sqlController.GetMediaAsset(DefaultAudioID);
+            yield return GetAudioClipFromPath(mediaAsset, audioUIData =>
+            {
+                onComplete?.Invoke(audioUIData);
+            });
         }
 
         public void GetAudioClipFromGallery(Action<AudioUIData> onComplete)
@@ -348,8 +365,14 @@ namespace DnDInitiativeTracker.Manager
             _audioUIDataCache.Add(audioUIData.Path, audioUIData);
         }
 
-        void CreateAudio(AudioUIData audioUIData, Action onComplete)
+        void CreateAudio(AudioUIData audioUIData, Action<AudioUIData> onComplete)
         {
+            if (IsAudioInDatabase(audioUIData))
+            {
+                onComplete?.Invoke(audioUIData);
+                return;
+            }
+
             NativeGalleryController.SaveImageToGallery(audioUIData.Path, (fullPath, fileName) =>
             {
                 var oldPath = audioUIData.Path;
@@ -363,7 +386,7 @@ namespace DnDInitiativeTracker.Manager
 
                 audioUIData.UpdateMediaData(mediaAsset);
 
-                onComplete?.Invoke();
+                onComplete?.Invoke(audioUIData);
             });
         }
 
@@ -399,6 +422,15 @@ namespace DnDInitiativeTracker.Manager
             });
         }
 
+        public IEnumerator GetDefaultCharacter(Action<CharacterUIData> onComplete)
+        {
+            var characterData = _sqlController.GetCharacter(DefaultCharacterID);
+            yield return GetCharacterUIDataAsync(characterData, characterUIData =>
+            {
+                onComplete?.Invoke(characterUIData);
+            });
+        }
+
         async Task<CharacterUIData> GetCharacterUIDataAsync(CharacterData characterData, Action<CharacterUIData> onComplete = null)
         {
             var avatarUIData = GetTextureFromPath(characterData.Avatar);
@@ -410,35 +442,49 @@ namespace DnDInitiativeTracker.Manager
                 audioClips.Add(audioUIData);
             }
 
-            var characterUIData = new CharacterUIData
-            {
-                Avatar = avatarUIData,
-                Name = characterName,
-                AudioClips = audioClips,
-            };
-
+            var characterUIData = new CharacterUIData(characterData, avatarUIData, characterName, audioClips);
             onComplete?.Invoke(characterUIData);
             return characterUIData;
         }
 
-        public void CreateCharacter(CharacterUIData characterUIData)
+        public IEnumerator CreateCharacter(CharacterUIData characterUIData, Action onComplete)
         {
+            yield return CreateCharacterAssets(characterUIData);
+
             var characterData = characterUIData.ToCharacterData();
-            //TODO somewhere in this flow we are missing creating the local copy
-            //of the avatar texture, this process should probably take care
-            //of both creating the local texture and adding that texture to SQLite
-            //TODO also applies for audio
             _sqlController.AddCharacter(characterData);
+
+            onComplete?.Invoke();
         }
 
-        public void UpdateCharacter(CharacterUIData characterUIData)
+        public IEnumerator UpdateCharacter(CharacterUIData characterUIData, Action onComplete)
         {
+            yield return CreateCharacterAssets(characterUIData);
+
             var characterData = characterUIData.ToCharacterData();
-            //TODO somewhere in this flow we are missing creating the local copy
-            //of the avatar texture, this process should probably take care
-            //of both creating the local texture and adding that texture to SQLite
-            //TODO also applies for audio
             _sqlController.UpdateCharacter(characterData);
+
+            onComplete?.Invoke();
+        }
+
+        IEnumerator CreateCharacterAssets(CharacterUIData characterUIData)
+        {
+            bool textureComplete = false;
+            CreateTexture(characterUIData.Avatar, _ => textureComplete = true);
+            yield return new WaitUntil(() => textureComplete);
+
+            foreach (var audioUIData in characterUIData.AudioList)
+            {
+                bool audioComplete = false;
+                CreateAudio(audioUIData, _ => audioComplete = true);
+                yield return new WaitUntil(() => audioComplete);
+            }
+        }
+
+        public bool IsCharacterInDatabase(CharacterUIData characterUIData)
+        {
+            var characterData = _sqlController.GetCharacter(characterUIData.Name);
+            return characterData != null;
         }
 
         #endregion

@@ -1,49 +1,88 @@
 using System;
 using System.Collections.Generic;
-using TMPro;
+using DnDInitiativeTracker.UIData;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class SelectAudioLayout : MonoBehaviour
 {
-    [SerializeField] Button addNewAudioButton;
-    [SerializeField] TMP_Dropdown audioDropdown;
+    [SerializeField] Button removeLayoutButton;
+    [SerializeField] SelectAssetLayout selectAssetLayout;
     [SerializeField] Button playAudioButton;
 
-    public event Action OnAddNew;
-    public event Action<string> OnSelectionChanged;
-    public event Action OnPlayAudio;
+    public int Index => transform.GetSiblingIndex();
+
+    public event Action<int> OnRemoveLayout;
+    public event Action<int> OnAddNew;
+    public event Action<int> OnRemoveNewAudio;
+    public event Action<int, string> OnSelectionChanged;
+    public event Action<AudioClip> OnPlayAudio;
+
+    AudioUIData _loadedUIData;
 
     public void Initialize()
     {
-        addNewAudioButton.onClick.AddListener(AddNewHandler);
-        audioDropdown.onValueChanged.AddListener(ValueChangedHandler);
+        removeLayoutButton.onClick.AddListener(RemoveLayoutHandler);
+
+        selectAssetLayout.Initialize();
+        selectAssetLayout.OnAddNew += AddNewHandler;
+        selectAssetLayout.OnSelectionChanged += ValueChangedHandler;
+        selectAssetLayout.OnRemove += RemoveNewAudioHandler;
+
         playAudioButton.onClick.AddListener(PlayAudioHandler);
     }
 
-    public void SetData(string currentName, List<string> audioClipNames)
+    public void SetData(AudioUIData audioUIData, List<string> audioClipNames)
     {
-        audioDropdown.ClearOptions();
-        audioDropdown.AddOptions(audioClipNames);
+        _loadedUIData = audioUIData;
 
-        var dropDownIndex = audioClipNames.FindIndex(x => x == currentName);
-        dropDownIndex = Mathf.Max(dropDownIndex, 0);
-        audioDropdown.value = dropDownIndex;
+        selectAssetLayout.SetData(audioUIData.Name, audioClipNames);
+    }
+
+    public void Show()
+    {
+        ShowDropDown(_loadedUIData);
+    }
+
+    public void ShowDropDown(AudioUIData audioUIData)
+    {
+        selectAssetLayout.ShowDropDown();
+        _loadedUIData = audioUIData;
+    }
+
+    public void ShowNewAudio(AudioUIData audioUIData)
+    {
+        selectAssetLayout.ShowNewAsset(audioUIData.Name);
+        _loadedUIData = audioUIData;
+    }
+
+    public void ReselectDropDown()
+    {
+        selectAssetLayout.ReselectDropDown();
+    }
+
+    void RemoveLayoutHandler()
+    {
+        OnRemoveLayout?.Invoke(Index);
     }
 
     void AddNewHandler()
     {
-        OnAddNew?.Invoke();
+        OnAddNew?.Invoke(Index);
     }
 
-    void ValueChangedHandler(int index)
+    void ValueChangedHandler(string audioName)
     {
-        var audioName = audioDropdown.options[index].text;
-        OnSelectionChanged?.Invoke(audioName);
+        OnSelectionChanged?.Invoke(Index, audioName);
+    }
+
+    void RemoveNewAudioHandler()
+    {
+        OnRemoveNewAudio?.Invoke(Index);
     }
 
     void PlayAudioHandler()
     {
-        OnPlayAudio?.Invoke();
+        OnPlayAudio?.Invoke(_loadedUIData.Data);
     }
 }

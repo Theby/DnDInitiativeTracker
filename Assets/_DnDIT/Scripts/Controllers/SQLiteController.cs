@@ -122,17 +122,9 @@ namespace DnDInitiativeTracker.Controller
 
         public void UpdateCharacter(CharacterData character)
         {
-            RefreshCharacterRegister(character);
-
             var sqlData = CreateCharacterSQLData(character);
             _sqLiteService.Update(sqlData);
 
-            character.UpdateRegister(sqlData);
-        }
-
-        void RefreshCharacterRegister(CharacterData character)
-        {
-            var sqlData = _sqLiteService.GetBy<CharacterSQLData>(c => c.Name == character.Name);
             character.UpdateRegister(sqlData);
         }
 
@@ -199,6 +191,12 @@ namespace DnDInitiativeTracker.Controller
 
             var sqlData = character.ToSQLData();
             return sqlData;
+        }
+
+        public bool ExistsCharacter(int id)
+        {
+            var sqlData = _sqLiteService.GetById<CharacterSQLData>(id);
+            return sqlData != null;
         }
 
         #endregion
