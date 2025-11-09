@@ -518,18 +518,5 @@ namespace DnDInitiativeTracker.Manager
         }
 
         #endregion
-
-        // public void UpdateEncounter(List<CharacterUIData> characterUIDataList)
-        // {
-        //     var characterDataList = characterUIDataList.ConvertAll(x => x.ToCharacterData());
-        //     foreach (var characterData in characterDataList)
-        //     {
-        //         characterData.SQLId = _sqlController.GetCharacterByName(characterData.Name).SQLId;
-        //     }
-        //
-        //     CurrentEncounter = characterUIDataList;
-        //     CurrentConfiguration.Characters = characterDataList;
-        //     _sqlController.UpdateCurrentConfiguration(CurrentConfiguration);
-        // }
     }
 }

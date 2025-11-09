@@ -242,11 +242,6 @@ namespace DnDInitiativeTracker.Controller
 
         CurrentConfigurationSQLData CreateCurrentConfigurationSQLData(CurrentConfigurationData configData)
         {
-            foreach (var character in configData.Characters)
-            {
-                UpdateCharacter(character);
-            }
-
             var sqlData = configData.ToSQLData();
             return sqlData;
         }

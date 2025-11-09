@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using DnDInitiativeTracker.GameData;
 using DnDInitiativeTracker.Manager;
@@ -133,48 +134,48 @@ namespace DnDInitiativeTracker.ScreenManager
 
         void GoBack()
         {
+            UpdateCurrentConfigurationEncounter(dmScreen.GetEncounter());
+
             OnGoBack?.Invoke();
         }
 
         #region Encounter
 
-        void AddCharacterToEncounter()
+        IEnumerator AddCharacterToEncounter()
         {
-            dmScreen.AddCharacterInitiativeLayout();
-        }
-
-        void RefreshEncounterOrder()
-        {
-            dmScreen.RefreshCharacterInitiativeLayoutList();
-
-            //TODO Maybe Encounter, Audio and Avatar should be its own SQL Class like Background
-            var updatedEncounter = dmScreen.GetEncounter();
-            //TODO dataManager.UpdateEncounter(updatedEncounter);
-            RefreshData();
-        }
-
-        IEnumerator CharacterEncounterSelected(int layoutIndex, string characterName)
-        {
-            //TODO maybe this UI and layouts should only use the name and initaitive
-            //in a simple data structure and you get the proper data later when saving or going
-            //back to PlayerScreen
-            yield return dataManager.GetCharacterFromDataBase(characterName, characterUIData =>
+            yield return dataManager.GetDefaultCharacter(defaultCharacter =>
             {
-                dmScreen.RefreshLayout(layoutIndex, characterUIData);
-
-                var updatedEncounter = dmScreen.GetEncounter();
-                //TODO dataManager.UpdateEncounter(updatedEncounter);
-                RefreshData();
+                dmScreen.AddCharacterInitiativeLayout(defaultCharacter, 0);
             });
         }
 
         void RemoveCharacterFromEncounter(int positionIndex)
         {
             dmScreen.RemoveCharacterInitiativeLayout(positionIndex);
+        }
 
-            var updatedEncounter = dmScreen.GetEncounter();
-            //TODO dataManager.UpdateEncounter(updatedEncounter);
-            RefreshData();
+        IEnumerator CharacterEncounterSelected(int layoutIndex, string characterName)
+        {
+            yield return dataManager.GetCharacterFromDataBase(characterName, characterUIData =>
+            {
+                dmScreen.UpdateCharacter(layoutIndex, characterUIData);
+            });
+        }
+
+        void RefreshEncounterOrder()
+        {
+            dmScreen.RefreshEncounterOrder();
+        }
+
+        void UpdateCurrentConfigurationEncounter((List<CharacterUIData>, List<int>) encounter)
+        {
+            var (characterList, initiativeList) = encounter;
+
+            _data.CurrentConfigurationUIData.CurrentEncounter = characterList;
+            _data.CurrentConfigurationUIData.InitiativeList = initiativeList;
+            dataManager.UpdateCurrentConfiguration(_data.CurrentConfigurationUIData);
+
+            Refresh();
         }
 
         #endregion
@@ -397,7 +398,7 @@ namespace DnDInitiativeTracker.ScreenManager
 
         public void AddMoreButtonInspectorHandler()
         {
-            AddCharacterToEncounter();
+            StartCoroutine(AddCharacterToEncounter());
         }
 
         public void RefreshButtonInspectorHandler()
@@ -419,9 +420,9 @@ namespace DnDInitiativeTracker.ScreenManager
             StartCoroutine(CharacterEncounterSelected(layoutIndex, characterName));
         }
 
-        public void RemoveCharacterLayoutInspectorHandler(int positionIndex)
+        public void RemoveCharacterLayoutInspectorHandler(int index)
         {
-            RemoveCharacterFromEncounter(positionIndex);
+            RemoveCharacterFromEncounter(index);
         }
 
         #endregion

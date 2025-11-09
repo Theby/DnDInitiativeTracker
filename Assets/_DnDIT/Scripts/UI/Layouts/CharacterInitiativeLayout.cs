@@ -21,7 +21,7 @@ namespace DnDInitiativeTracker.UI
             set
             {
                 _positionIndex = value;
-                SetPositionLabel(value);
+                positionLabel.text = $"{_positionIndex}";
             }
         }
 
@@ -31,55 +31,47 @@ namespace DnDInitiativeTracker.UI
             private set => initiativeInputField.text = value.ToString();
         }
 
-        public CharacterUIData Data { get; private set; }
+        public CharacterUIData LoadedCharacter { get; private set; }
 
         public event Action<int> OnRemove;
         public event Action<int, string> OnSelectionChanged;
 
         public void Initialize()
         {
-            characterDropdown.onValueChanged.AddListener(CharacterSelectedHandler);
             removeButton.onClick.AddListener(OnRemoveButtonPressedHandler);
+            characterDropdown.onValueChanged.AddListener(CharacterSelectedHandler);
         }
 
-        //TODO UI should not clear data
-        // void OnDestroy()
-        // {
-        //     Data?.Dispose();
-        // }
-
-        public void SetData(CharacterUIData data, List<string> characterNames)
+        public void SetData(int positionIndex, CharacterUIData characterUIData, int initiative, List<string> characterNames)
         {
-            Data = data;
+            PositionIndex = positionIndex;
+            LoadedCharacter = characterUIData;
 
             characterDropdown.ClearOptions();
             characterDropdown.AddOptions(characterNames);
 
-            var dropDownIndex = Data == null ? 0 : characterDropdown.options.FindIndex(x => x.text == Data.Name);
-            characterDropdown.value = dropDownIndex;
+            var dropDownIndex = LoadedCharacter == null ? 0 : characterDropdown.options.FindIndex(x => x.text == LoadedCharacter.Name);
+            characterDropdown.SetValueWithoutNotify(dropDownIndex);
 
-            //TODO from where are we getting this?
-            Initiative = 0;
+            Initiative = initiative;
         }
 
-        void SetPositionLabel(int positionIndex)
+        public void UpdateCharacter(CharacterUIData characterUIData)
         {
-            positionLabel.text = positionIndex.ToString();
-        }
-
-        void CharacterSelectedHandler(int index)
-        {
-            var characterName = characterDropdown.options[index].text;
-            if (Data != null && Data.Name == characterName)
-                return;
-
-            var layoutIndex = PositionIndex - 1;
-            OnSelectionChanged?.Invoke(layoutIndex, characterName);
+            LoadedCharacter = characterUIData;
         }
 
         void OnRemoveButtonPressedHandler()
         {
-            OnRemove?.Invoke(PositionIndex);
+            var index = PositionIndex - 1;
+            OnRemove?.Invoke(index);
+        }
+
+        void CharacterSelectedHandler(int dropdownIndex)
+        {
+            var index = PositionIndex - 1;
+            var characterName = characterDropdown.options[dropdownIndex].text;
+            OnSelectionChanged?.Invoke(index, characterName);
         }
     }
 }

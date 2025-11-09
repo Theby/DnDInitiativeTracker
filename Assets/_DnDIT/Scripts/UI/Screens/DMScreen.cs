@@ -35,8 +35,6 @@ namespace DnDInitiativeTracker.UI
 
         public override void Initialize()
         {
-            scrollContent.transform.DestroyChildren();
-
             addMoreButton.onClick.AddListener(onAddMore.Invoke);
             refreshButton.onClick.AddListener(onRefresh.Invoke);
             createCharacterButton.onClick.AddListener(onCreateCharacter.Invoke);
@@ -60,74 +58,74 @@ namespace DnDInitiativeTracker.UI
 
         public void Refresh()
         {
-            foreach (var layout in _layoutList)
+            for (var i = 0; i < _layoutList.Count; i++)
             {
-                layout.SetData(layout.Data, _data.CharacterNames);
+                var layout = _layoutList[i];
+                layout.PositionIndex = i + 1;
             }
-        }
-
-        public void RefreshLayout(int layoutIndex, CharacterUIData characterUIData)
-        {
-            var layout = _layoutList[layoutIndex];
-            layout.SetData(characterUIData, _data.CharacterNames);
         }
 
         void InstantiateCurrentEncounter()
         {
             _layoutList.Clear();
             scrollContent.transform.DestroyChildren();
-            foreach (var characterData in _data.CurrentConfigurationUIData.CurrentEncounter)
+            for (var i = 0; i < _data.CurrentConfigurationUIData.CurrentEncounter.Count; i++)
             {
-                InstantiateCharacterInitiativeLayout(characterData);
+                var characterData = _data.CurrentConfigurationUIData.CurrentEncounter[i];
+                var initiative = _data.CurrentConfigurationUIData.InitiativeList[i];
+                InstantiateCharacterInitiativeLayout(characterData, initiative);
             }
-            RefreshCharacterInitiativeLayoutList();
         }
 
-        void InstantiateCharacterInitiativeLayout(CharacterUIData characterUIData)
+        void InstantiateCharacterInitiativeLayout(CharacterUIData characterUIData, int initiative)
         {
             var characterInitiativeLayout = Instantiate(characterInitiativeLayoutPrefab, scrollContent.transform);
+            var positionIndex = _layoutList.Count + 1;
 
             characterInitiativeLayout.Initialize();
-            characterInitiativeLayout.SetData(characterUIData, _data.CharacterNames);
-            characterInitiativeLayout.OnSelectionChanged += onCharacterSelected.Invoke;
+            characterInitiativeLayout.SetData(positionIndex, characterUIData, initiative, _data.CharacterNames);
             characterInitiativeLayout.OnRemove += onRemoveLayout.Invoke;
-            characterInitiativeLayout.PositionIndex = _layoutList.Count + 1;
+            characterInitiativeLayout.OnSelectionChanged += onCharacterSelected.Invoke;
 
             _layoutList.Add(characterInitiativeLayout);
         }
 
-        public void AddCharacterInitiativeLayout(CharacterUIData characterUIData = null)
+        public void AddCharacterInitiativeLayout(CharacterUIData characterUIData, int initiative)
         {
-            InstantiateCharacterInitiativeLayout(characterUIData);
+            InstantiateCharacterInitiativeLayout(characterUIData, initiative);
         }
 
-        public void RemoveCharacterInitiativeLayout(int positionIndex)
+        public void RemoveCharacterInitiativeLayout(int index)
         {
-            var index = positionIndex - 1;
             var layoutToRemove = _layoutList[index];
 
             _layoutList.RemoveAt(index);
             Destroy(layoutToRemove.gameObject);
 
-            RefreshCharacterInitiativeLayoutList();
+            Refresh();
         }
 
-        public void RefreshCharacterInitiativeLayoutList()
+        public void UpdateCharacter(int layoutIndex, CharacterUIData characterUIData)
+        {
+            var layout = _layoutList[layoutIndex];
+            layout.UpdateCharacter(characterUIData);
+        }
+
+        public void RefreshEncounterOrder()
         {
             _layoutList = _layoutList.OrderByDescending(l => l.Initiative).ToList();
-            for (var i = 0; i < _layoutList.Count; i++)
+            foreach (var layout in _layoutList)
             {
-                var layout = _layoutList[i];
                 layout.transform.SetAsLastSibling();
-                layout.PositionIndex = i + 1;
             }
+
+            Refresh();
         }
 
-        public List<CharacterUIData> GetEncounter()
+        public (List<CharacterUIData>, List<int>) GetEncounter()
         {
-            return _layoutList.Where(l => l.Data != null)
-                .Select(l => l.Data)
-                .ToList();
+            return (_layoutList.Select(l => l.LoadedCharacter).ToList(),
+                _layoutList.Select(l => l.Initiative).ToList());
         }
     }
 }
