@@ -8,12 +8,15 @@ public class CharacterEncounterLayout : MonoBehaviour
     [SerializeField] RawImage avatarImage;
     [SerializeField] TextMeshProUGUI nameLabel;
 
-    public CharacterUIData Data { get; private set; }
+    public CharacterUIData Character { get; private set; }
+    public int Initiative { get; private set; }
 
-    public void SetData(CharacterUIData data)
+    public void SetData(CharacterUIData character, int initiative)
     {
-        Data = data;
-        avatarImage.texture = data.Avatar.Data;
-        nameLabel.text = data.Name;
+        Character = character;
+        Initiative = initiative;
+        
+        avatarImage.texture = character.Avatar.Data;
+        nameLabel.text = character.Name;
     }
 }

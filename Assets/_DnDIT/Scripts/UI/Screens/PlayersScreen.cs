@@ -28,56 +28,40 @@ namespace DnDInitiativeTracker.UI
         [SerializeField] UnityEvent onNext;
         [SerializeField] UnityEvent onStop;
 
-        List<CharacterUIData> _data;
+        PlayerScreenData _data;
         List<CharacterEncounterLayout> _layoutList = new();
 
         public override void Initialize()
         {
-            scrollContent.transform.DestroyChildren();
-
             editButton.onClick.AddListener(onEdit.Invoke);
             startButton.onClick.AddListener(onStart.Invoke);
             nextButton.onClick.AddListener(onNext.Invoke);
             stopButton.onClick.AddListener(onStop.Invoke);
-
-            SetReadyState();
         }
 
-        public void SetData(List<CharacterUIData> data)
+        public void SetData(PlayerScreenData data)
         {
             _data = data;
             InstantiateCurrentEncounter();
-        }
-
-        public override void Show()
-        {
-            base.Show();
-
-            Refresh();
-        }
-
-        public void Refresh()
-        {
-            foreach (var layout in _layoutList)
-            {
-                layout.SetData(layout.Data);
-            }
         }
 
         void InstantiateCurrentEncounter()
         {
             _layoutList.Clear();
             scrollContent.transform.DestroyChildren();
-            foreach (var characterUIData in _data)
+            for (var i = 0; i < _data.CurrentConfigurationUIData.CurrentEncounter.Count; i++)
             {
-                InstantiateCharacterInitiativeLayout(characterUIData);
+                var characterUIData = _data.CurrentConfigurationUIData.CurrentEncounter[i];
+                var initiative = _data.CurrentConfigurationUIData.InitiativeList[i];
+
+                InstantiateCharacterInitiativeLayout(characterUIData, initiative);
             }
         }
 
-        void InstantiateCharacterInitiativeLayout(CharacterUIData characterUIData)
+        void InstantiateCharacterInitiativeLayout(CharacterUIData characterUIData, int initiative)
         {
             var characterInitiativeLayout = Instantiate(characterEncounterLayoutPrefab, scrollContent.transform);
-            characterInitiativeLayout.SetData(characterUIData);
+            characterInitiativeLayout.SetData(characterUIData, initiative);
 
             _layoutList.Add(characterInitiativeLayout);
         }
@@ -132,13 +116,36 @@ namespace DnDInitiativeTracker.UI
             scrollRect.verticalNormalizedPosition = 1.0f;
         }
 
+        public void SelectCharacter(CharacterUIData character, int initiative)
+        {
+            //TODO not liking this logic
+
+            // var characterLayout = _layoutList.FirstOrDefault(l => l.Character.Name == character.Name);
+            // characterLayout ??= _layoutList.FirstOrDefault(l => l.Initiative <= initiative);
+            // characterLayout ??= _layoutList.Last();
+            //
+            // var newLayoutList = new List<CharacterEncounterLayout>(_layoutList);
+            // var layoutIndex = _layoutList.IndexOf(characterLayout);
+            // for (int i = 0; i < layoutIndex; i++)
+            // {
+            //     var layout = _layoutList[i];
+            //     layout.transform.SetAsLastSibling();
+            //
+            //     newLayoutList.Add(layout);
+            //     newLayoutList.RemoveAt(0);
+            // }
+            //
+            // _layoutList = newLayoutList;
+            // scrollRect.verticalNormalizedPosition = 1.0f;
+        }
+
         public AudioClip GetFirstCharacterAudioClip()
         {
             var layout = _layoutList.FirstOrDefault();
             if (layout == null)
                 return null;
 
-            var audioList = layout.Data.AudioList;
+            var audioList = layout.Character.AudioList;
             var randomIndex = Random.Range(0, audioList.Count);
             var audioClip = audioList[randomIndex];
 
@@ -147,13 +154,19 @@ namespace DnDInitiativeTracker.UI
 
         public void ResetEncounterOrder()
         {
-            for (var i = 0; i < _data.Count; i++)
+            for (var i = 0; i < _layoutList.Count; i++)
             {
-                var characterUIData = _data[i];
                 var layout = _layoutList[i];
+                var characterUIData = _data.CurrentConfigurationUIData.CurrentEncounter[i];
+                var initiative = _data.CurrentConfigurationUIData.InitiativeList[i];
 
-                layout.SetData(characterUIData);
+                layout.SetData(characterUIData, initiative);
             }
+        }
+
+        public CharacterEncounterLayout GetCurrentCharacter()
+        {
+            return _layoutList.First();
         }
     }
 }
