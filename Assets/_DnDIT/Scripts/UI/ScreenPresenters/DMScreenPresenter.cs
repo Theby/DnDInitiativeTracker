@@ -192,10 +192,12 @@ namespace DnDInitiativeTracker.ScreenManager
             });
         }
 
-        void SelectAvatar(string avatarName)
+        IEnumerator SelectAvatar(string avatarName)
         {
-            var previewTexture = dataManager.GetTextureFromDataBase(avatarName, MediaAssetType.Avatar);
-            createCharacterPopup.ShowAvatarDropdown(previewTexture);
+            yield return dataManager.GetTextureFromDataBase(avatarName, MediaAssetType.Avatar, previewTexture =>
+            {
+                createCharacterPopup.ShowAvatarDropdown(previewTexture);
+            });
         }
 
         void RemoveNewAvatar()
@@ -271,10 +273,12 @@ namespace DnDInitiativeTracker.ScreenManager
             });
         }
 
-        void SelectAvatarEdit(string avatarName)
+        IEnumerator SelectAvatarEdit(string avatarName)
         {
-            var previewTexture = dataManager.GetTextureFromDataBase(avatarName, MediaAssetType.Avatar);
-            editCharacterPopup.ShowAvatarDropdown(previewTexture);
+            yield return dataManager.GetTextureFromDataBase(avatarName, MediaAssetType.Avatar, previewTexture =>
+            {
+                editCharacterPopup.ShowAvatarDropdown(previewTexture);
+            });
         }
 
         void RemoveNewAvatarEdit()
@@ -351,10 +355,12 @@ namespace DnDInitiativeTracker.ScreenManager
             });
         }
 
-        void SelectBackground(string bgName)
+        IEnumerator SelectBackground(string bgName)
         {
-            var previewTexture = dataManager.GetTextureFromDataBase(bgName, MediaAssetType.Background);
-            changeBGPopup.ShowDropDown(previewTexture);
+            yield return dataManager.GetTextureFromDataBase(bgName, MediaAssetType.Background, previewTexture =>
+            {
+                changeBGPopup.ShowDropDown(previewTexture);
+            });
         }
 
         void RemoveNewBackground()
@@ -436,7 +442,7 @@ namespace DnDInitiativeTracker.ScreenManager
 
         public void AvatarSelectionChangedInspectorHandler(string avatarName)
         {
-            SelectAvatar(avatarName);
+            StartCoroutine(SelectAvatar(avatarName));
         }
 
         public void AvatarRemovedInspectorHandler()
@@ -495,7 +501,7 @@ namespace DnDInitiativeTracker.ScreenManager
 
         public void AvatarSelectionChangedInspectorHandlerEdit(string avatarName)
         {
-            SelectAvatarEdit(avatarName);
+            StartCoroutine(SelectAvatarEdit(avatarName));
         }
 
         public void AvatarRemovedInspectorHandlerEdit()
@@ -549,7 +555,7 @@ namespace DnDInitiativeTracker.ScreenManager
 
         public void BackgroundSelectionDropdownInspectorHandler(string bgName)
         {
-            SelectBackground(bgName);
+            StartCoroutine(SelectBackground(bgName));
         }
 
         public void RemoveNewBackgroundButtonInspectorHandler()

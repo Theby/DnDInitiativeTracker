@@ -180,7 +180,6 @@ namespace DnDInitiativeTracker.Manager
             NativeGalleryController.GetImagePathFromGallery(path =>
             {
                 var fileName = Path.GetFileNameWithoutExtension(path);
-
                 var mediaAsset = new MediaAssetData
                 {
                     Name = fileName,
@@ -188,31 +187,35 @@ namespace DnDInitiativeTracker.Manager
                     Type = type,
                 };
 
-                var textureUIData = GetTextureFromPath(mediaAsset);
+                GetTextureFromPath(mediaAsset, onComplete);
+            });
+        }
+
+        public IEnumerator GetTextureFromDataBase(string fileName, MediaAssetType type, Action<TextureUIData> onComplete)
+        {
+            var mediaAsset = _sqlController.GetMediaAsset((int)type, fileName);
+            yield return GetTextureFromPath(mediaAsset, textureUIData =>
+            {
                 onComplete?.Invoke(textureUIData);
             });
         }
 
-        public TextureUIData GetTextureFromDataBase(string fileName, MediaAssetType type)
-        {
-            var mediaAsset = _sqlController.GetMediaAsset((int)type, fileName);
-            var textureUIData = GetTextureFromPath(mediaAsset);
-
-            return textureUIData;
-        }
-
-        TextureUIData GetTextureFromPath(MediaAssetData mediaAssetData)
+        async Task<TextureUIData> GetTextureFromPath(MediaAssetData mediaAssetData, Action<TextureUIData> onComplete = null)
         {
             var cacheTexture = GetTextureFromCache(mediaAssetData.Path);
             if (cacheTexture != null)
                 return cacheTexture;
 
-            var texture = NativeGalleryController.GetImageFromPath(mediaAssetData.Path);
+            var texture = await NativeGalleryController.GetImageFromPathAsync(mediaAssetData.Path);
+            if (texture == null)
+                return null;
+
             texture.name = mediaAssetData.Name;
 
             var textureUIData = new TextureUIData(mediaAssetData, texture);
             AddTextureToCache(textureUIData);
 
+            onComplete?.Invoke(textureUIData);
             return textureUIData;
         }
 
@@ -433,7 +436,7 @@ namespace DnDInitiativeTracker.Manager
 
         async Task<CharacterUIData> GetCharacterUIDataAsync(CharacterData characterData, Action<CharacterUIData> onComplete = null)
         {
-            var avatarUIData = GetTextureFromPath(characterData.Avatar);
+            var avatarUIData = await GetTextureFromPath(characterData.Avatar);
             var characterName = characterData.Name;
             var audioClips = new List<AudioUIData>();
             foreach (var audioData in characterData.AudioList)
@@ -505,10 +508,12 @@ namespace DnDInitiativeTracker.Manager
             }
 
             var initiativeList = config.InitiativeList;
-            var backgroundUIData = GetTextureFromPath(config.Background);
 
-            var uiData = new CurrentConfigurationUIData(config, currentEncounter, initiativeList, backgroundUIData);
-            onComplete?.Invoke(uiData);
+            yield return GetTextureFromPath(config.Background, backgroundUIData =>
+            {
+                var uiData = new CurrentConfigurationUIData(config, currentEncounter, initiativeList, backgroundUIData);
+                onComplete?.Invoke(uiData);
+            } );
         }
 
         public void UpdateCurrentConfiguration(CurrentConfigurationUIData uiData)

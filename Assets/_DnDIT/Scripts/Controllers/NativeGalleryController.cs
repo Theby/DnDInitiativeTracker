@@ -52,7 +52,7 @@ namespace DnDInitiativeTracker.Controller
             }
         }
 
-        public static Texture2D GetImageFromPath(string path)
+        public static async Task<Texture2D> GetImageFromPathAsync(string path)
         {
             if (string.IsNullOrEmpty(path))
                 return null;
@@ -61,7 +61,7 @@ namespace DnDInitiativeTracker.Controller
 
             try
             {
-                texture = NativeGallery.LoadImageAtPath(path);
+                texture = await NativeGallery.LoadImageAtPathAsync(path);
             }
             catch (Exception e)
             {
