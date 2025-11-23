@@ -381,7 +381,7 @@ namespace DnDInitiativeTracker.Manager
                 return;
             }
 
-            NativeGalleryController.SaveImageToGallery(audioUIData.Path, (fullPath, fileName) =>
+            NativeGalleryController.SaveAudioToGallery(audioUIData.Path, (fullPath, fileName) =>
             {
                 var oldPath = audioUIData.Path;
                 audioUIData.Name = fileName;
