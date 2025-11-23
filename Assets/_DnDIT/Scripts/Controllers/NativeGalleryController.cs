@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using DnDInitiativeTracker.Manager;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -28,7 +29,7 @@ namespace DnDInitiativeTracker.Controller
             {".acc", AudioType.ACC},
         };
 
-        public static async Task RequestPermissions()
+        public static async Task RequestPermissionsAsync()
         {
             Task readTask = NativeGallery.RequestPermissionAsync(NativeGallery.PermissionType.Read,
                 NativeGallery.MediaType.Image | NativeGallery.MediaType.Audio);
@@ -62,7 +63,7 @@ namespace DnDInitiativeTracker.Controller
             try
             {
                 texture = IsStreamingAssetsPath(path)
-                    ? await LoadImageAtPathAsync(path)
+                    ? await LoadImageFromStreamingAssetsAsync(path)
                     : await NativeGallery.LoadImageAtPathAsync(path);
             }
             catch (Exception e)
@@ -77,25 +78,24 @@ namespace DnDInitiativeTracker.Controller
             var fileName = Path.GetFileNameWithoutExtension(path);
             texture.name = fileName;
 
-            Debug.LogError($"Loaded image {fileName}");
-
             return texture;
         }
 
         static bool IsStreamingAssetsPath(string path)
         {
-            return path.StartsWith("file://") || path.StartsWith("jar:");
+            return path.StartsWith(DataManager.StreamingAssetTag);
         }
 
-        static async Task<Texture2D> LoadImageAtPathAsync(string path, bool markTextureNonReadable = false, Action<Texture2D> onComplete = null)
+        static async Task<Texture2D> LoadImageFromStreamingAssetsAsync(string path, bool markTextureNonReadable = false)
         {
             if (string.IsNullOrEmpty(path))
             {
-                onComplete?.Invoke(null);
                 return null;
             }
 
-            var uri = new Uri(path);
+            path = path.Replace(DataManager.StreamingAssetTag, "");
+            var fullPath = Path.Combine(Application.streamingAssetsPath, path);
+            var uri = new Uri(fullPath);
             Texture2D texture2D;
 
             try
@@ -113,7 +113,6 @@ namespace DnDInitiativeTracker.Controller
                 Debug.LogError(e.Message);
             }
 
-            onComplete?.Invoke(texture2D);
             return texture2D;
         }
 
@@ -160,11 +159,10 @@ namespace DnDInitiativeTracker.Controller
             }
         }
 
-        public static async Task<AudioClip> GetAudioClipFromPathAsync(string path, Action<AudioClip> onComplete = null)
+        public static async Task<AudioClip> GetAudioClipFromPathAsync(string path)
         {
             if (string.IsNullOrEmpty(path))
             {
-                onComplete?.Invoke(null);
                 return null;
             }
 
@@ -192,7 +190,6 @@ namespace DnDInitiativeTracker.Controller
                 Debug.LogError(e.Message);
             }
 
-            onComplete?.Invoke(audioClip);
             return audioClip;
         }
 
