@@ -31,13 +31,17 @@ namespace DnDInitiativeTracker.Controller
 
         public static async Task RequestPermissionsAsync()
         {
-            Task readTask = NativeGallery.RequestPermissionAsync(NativeGallery.PermissionType.Read,
-                NativeGallery.MediaType.Image | NativeGallery.MediaType.Audio);
-            Task writeTask = NativeGallery.RequestPermissionAsync(NativeGallery.PermissionType.Write,
-                NativeGallery.MediaType.Image | NativeGallery.MediaType.Audio);
-
-            await readTask;
-            await writeTask;
+            try
+            {
+                await NativeGallery.RequestPermissionAsync(NativeGallery.PermissionType.Read,
+                    NativeGallery.MediaType.Image | NativeGallery.MediaType.Audio);
+                await NativeGallery.RequestPermissionAsync(NativeGallery.PermissionType.Write,
+                    NativeGallery.MediaType.Image | NativeGallery.MediaType.Audio);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
         }
 
         public static void GetImagePathFromGallery(Action<string> onComplete)
@@ -89,17 +93,16 @@ namespace DnDInitiativeTracker.Controller
         static async Task<Texture2D> LoadImageFromStreamingAssetsAsync(string path, bool markTextureNonReadable = false)
         {
             if (string.IsNullOrEmpty(path))
-            {
                 return null;
-            }
 
-            path = path.Replace(DataManager.StreamingAssetTag, "");
-            var fullPath = Path.Combine(Application.streamingAssetsPath, path);
-            var uri = new Uri(fullPath);
             Texture2D texture2D;
 
             try
             {
+                path = path.Replace(DataManager.StreamingAssetTag, "");
+                var fullPath = Path.Combine(Application.streamingAssetsPath, path);
+                var uri = new Uri(fullPath);
+
                 using var www = UnityWebRequestTexture.GetTexture(uri, markTextureNonReadable);
                 await www.SendWebRequest();
 
@@ -124,11 +127,11 @@ namespace DnDInitiativeTracker.Controller
                 return;
             }
 
-            var fullPath = path;
-            var currentFileName = Path.GetFileNameWithoutExtension(path);
-
             try
             {
+                var fullPath = path;
+                var currentFileName = Path.GetFileNameWithoutExtension(path);
+
                 NativeGallery.SaveImageToGallery(fullPath, AlbumName, currentFileName, (success, savePath) =>
                 {
 #if UNITY_EDITOR
@@ -162,16 +165,17 @@ namespace DnDInitiativeTracker.Controller
         public static async Task<AudioClip> GetAudioClipFromPathAsync(string path)
         {
             if (string.IsNullOrEmpty(path))
-            {
                 return null;
-            }
 
-            var uri = new Uri(path);
-            var audioType = GetAudioType(path);
             AudioClip audioClip;
 
             try
             {
+                path = path.Replace(DataManager.StreamingAssetTag, "");
+                var fullPath = Path.Combine(Application.streamingAssetsPath, path);
+                var uri = new Uri(fullPath);
+                var audioType = GetAudioType(path);
+
                 using var www = UnityWebRequestMultimedia.GetAudioClip(uri, audioType);
                 await www.SendWebRequest();
 
@@ -209,11 +213,11 @@ namespace DnDInitiativeTracker.Controller
                 return;
             }
 
-            var fullPath = path;
-            var currentFileName = Path.GetFileNameWithoutExtension(path);
-
             try
             {
+                var fullPath = path;
+                var currentFileName = Path.GetFileNameWithoutExtension(path);
+                
                 NativeGallery.SaveAudioToGallery(fullPath, AlbumName, currentFileName, (success, savePath) =>
                 {
 #if UNITY_EDITOR
