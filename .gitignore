@@ -104,3 +104,7 @@ InitTestScene*.unity*
 # Personal
 /[Aa]ssets/EstebanGaete/
 /[Aa]ssets/EstebanGaete.meta
+
+# BuildInfo
+/[Aa]ssets/[Ss]treamingAssets/build_info
+/[Aa]ssets/[Ss]treamingAssets/build_info.meta
