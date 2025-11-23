@@ -29,13 +29,13 @@ namespace DnDInitiativeTracker.Manager
         readonly Dictionary<string, TextureUIData> _textureUIDataCache = new();
         readonly Dictionary<string, AudioUIData> _audioUIDataCache = new();
 
-        public IEnumerator Initialize()
+        public async Task Initialize()
         {
             _sqlController = new SQLiteController();
             _sqlController.Initialize();
             AddDefaults();
 
-            yield return LoadData();
+            await LoadData();
         }
 
         void OnDestroy()
@@ -144,21 +144,19 @@ namespace DnDInitiativeTracker.Manager
 
         #region Load Data
 
-        IEnumerator LoadData()
+        async Task LoadData()
         {
             IsLoaded = false;
 
-            yield return LoadConfigurationData();
+            await LoadConfigurationData();
 
             IsLoaded = true;
         }
 
-        IEnumerator LoadConfigurationData()
+        async Task LoadConfigurationData()
         {
-            yield return GetCurrentConfigurationFromDataBase(CurrentConfigID, uiData =>
-            {
-                CurrentConfigurationUIData = uiData;
-            });
+            var uiData = await GetCurrentConfigurationFromDataBase(CurrentConfigID);
+            CurrentConfigurationUIData = uiData;
         }
 
         #endregion
@@ -494,26 +492,26 @@ namespace DnDInitiativeTracker.Manager
 
         #region CurrentConfiguration
 
-        public IEnumerator GetCurrentConfigurationFromDataBase(int configID, Action<CurrentConfigurationUIData> onComplete)
+        public async Task<CurrentConfigurationUIData> GetCurrentConfigurationFromDataBase(int configID, Action<CurrentConfigurationUIData> onComplete = null)
         {
             CurrentConfigurationData config = _sqlController.GetCurrentConfigurationById(configID);
 
             var currentEncounter = new List<CharacterUIData>();
             foreach (var character in config.Characters)
             {
-                yield return GetCharacterFromDataBase(character, characterUIData =>
-                {
-                    currentEncounter.Add(characterUIData);
-                });
+                // await GetCharacterFromDataBase(character, characterUIData =>
+                // {
+                //     currentEncounter.Add(characterUIData);
+                // });
             }
 
             var initiativeList = config.InitiativeList;
 
-            yield return GetTextureFromPath(config.Background, backgroundUIData =>
-            {
-                var uiData = new CurrentConfigurationUIData(config, currentEncounter, initiativeList, backgroundUIData);
-                onComplete?.Invoke(uiData);
-            } );
+            var backgroundUIData = await GetTextureFromPath(config.Background);
+            var uiData = new CurrentConfigurationUIData(config, currentEncounter, initiativeList, backgroundUIData);
+
+            onComplete?.Invoke(uiData);
+            return uiData;
         }
 
         public void UpdateCurrentConfiguration(CurrentConfigurationUIData uiData)

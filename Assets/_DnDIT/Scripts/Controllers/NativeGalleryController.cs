@@ -61,7 +61,9 @@ namespace DnDInitiativeTracker.Controller
 
             try
             {
-                texture = await NativeGallery.LoadImageAtPathAsync(path);
+                texture = IsStreamingAssetsPath(path)
+                    ? await LoadImageAtPathAsync(path)
+                    : await NativeGallery.LoadImageAtPathAsync(path);
             }
             catch (Exception e)
             {
@@ -75,7 +77,44 @@ namespace DnDInitiativeTracker.Controller
             var fileName = Path.GetFileNameWithoutExtension(path);
             texture.name = fileName;
 
+            Debug.LogError($"Loaded image {fileName}");
+
             return texture;
+        }
+
+        static bool IsStreamingAssetsPath(string path)
+        {
+            return path.StartsWith("file://") || path.StartsWith("jar:");
+        }
+
+        static async Task<Texture2D> LoadImageAtPathAsync(string path, bool markTextureNonReadable = false, Action<Texture2D> onComplete = null)
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                onComplete?.Invoke(null);
+                return null;
+            }
+
+            var uri = new Uri(path);
+            Texture2D texture2D;
+
+            try
+            {
+                using var www = UnityWebRequestTexture.GetTexture(uri, markTextureNonReadable);
+                await www.SendWebRequest();
+
+                texture2D = www.result is not UnityWebRequest.Result.Success
+                    ? null
+                    : DownloadHandlerTexture.GetContent(www);
+            }
+            catch (Exception e)
+            {
+                texture2D = null;
+                Debug.LogError(e.Message);
+            }
+
+            onComplete?.Invoke(texture2D);
+            return texture2D;
         }
 
         public static void SaveImageToGallery(string path, Action<string, string> onComplete = null)

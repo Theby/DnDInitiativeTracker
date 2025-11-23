@@ -9,7 +9,7 @@ namespace DnDInitiativeTracker.Manager
         [Header("Data")]
         [SerializeField] DataManager dataManager;
         [Header("UI")]
-        [SerializeField] RawImage background;
+        [SerializeField] public RawImage background;
         [SerializeField] DMScreenPresenter dmScreenPresenter;
         [SerializeField] PlayersScreenPresenter playersScreenPresenter;
 
