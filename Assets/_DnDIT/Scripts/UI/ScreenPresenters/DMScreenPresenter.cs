@@ -1,7 +1,6 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
+using System.Threading.Tasks;
 using DnDInitiativeTracker.GameData;
 using DnDInitiativeTracker.Manager;
 using DnDInitiativeTracker.UI;
@@ -49,22 +48,20 @@ namespace DnDInitiativeTracker.ScreenManager
             dmScreen.Show();
         }
 
-        IEnumerator ShowCreateCharacterPopup()
+        async Task ShowCreateCharacterPopupAsync()
         {
-            yield return dataManager.GetDefaultCharacter(defaultCharacter =>
-            {
-                createCharacterPopup.SetData(_data, defaultCharacter);
-                createCharacterPopup.Show();
-            });
+            var defaultCharacter = await dataManager.GetDefaultCharacterAsync();
+
+            createCharacterPopup.SetData(_data, defaultCharacter);
+            createCharacterPopup.Show();
         }
 
-        IEnumerator ShowEditCharacterPopup()
+        async Task ShowEditCharacterPopupAsync()
         {
-            yield return dataManager.GetDefaultCharacter(defaultCharacter =>
-            {
-                editCharacterPopup.SetData(_data, defaultCharacter);
-                editCharacterPopup.Show();
-            });
+            var defaultCharacter = await dataManager.GetDefaultCharacterAsync();
+
+            editCharacterPopup.SetData(_data, defaultCharacter);
+            editCharacterPopup.Show();
         }
 
         void ShowChangeBGPopup()
@@ -141,12 +138,10 @@ namespace DnDInitiativeTracker.ScreenManager
 
         #region Encounter
 
-        IEnumerator AddCharacterToEncounter()
+        async Task AddCharacterToEncounterAsync()
         {
-            yield return dataManager.GetDefaultCharacter(defaultCharacter =>
-            {
-                dmScreen.AddCharacterInitiativeLayout(defaultCharacter, 0);
-            });
+            var defaultCharacter = await dataManager.GetDefaultCharacterAsync();
+            dmScreen.AddCharacterInitiativeLayout(defaultCharacter, 0);
         }
 
         void RemoveCharacterFromEncounter(int positionIndex)
@@ -154,12 +149,10 @@ namespace DnDInitiativeTracker.ScreenManager
             dmScreen.RemoveCharacterInitiativeLayout(positionIndex);
         }
 
-        IEnumerator CharacterEncounterSelected(int layoutIndex, string characterName)
+        async Task CharacterEncounterSelectedAsync(int layoutIndex, string characterName)
         {
-            yield return dataManager.GetCharacterFromDataBase(characterName, characterUIData =>
-            {
-                dmScreen.UpdateCharacter(layoutIndex, characterUIData);
-            });
+            var characterUIData = await dataManager.GetCharacterFromDataBaseAsync(characterName);
+            dmScreen.UpdateCharacter(layoutIndex, characterUIData);
         }
 
         void RefreshEncounterOrder()
@@ -192,12 +185,10 @@ namespace DnDInitiativeTracker.ScreenManager
             });
         }
 
-        IEnumerator SelectAvatar(string avatarName)
+        async Task SelectAvatarAsync(string avatarName)
         {
-            yield return dataManager.GetTextureFromDataBase(avatarName, MediaAssetType.Avatar, previewTexture =>
-            {
-                createCharacterPopup.ShowAvatarDropdown(previewTexture);
-            });
+            var previewTexture = await dataManager.GetTextureFromDataBaseAsync(avatarName, MediaAssetType.Avatar);
+            createCharacterPopup.ShowAvatarDropdown(previewTexture);
         }
 
         void RemoveNewAvatar()
@@ -205,12 +196,10 @@ namespace DnDInitiativeTracker.ScreenManager
             createCharacterPopup.ReselectAvatarDropDown();
         }
 
-        IEnumerator AddAudioLayout()
+        async Task AddAudioLayoutAsync()
         {
-            yield return dataManager.GetDefaultAudio(audioUIData =>
-            {
-                createCharacterPopup.AddAudioLayout(audioUIData);
-            });
+            var audioUIData = await dataManager.GetDefaultAudioAsync();
+            createCharacterPopup.AddAudioLayout(audioUIData);
         }
 
         void RemoveAudioLayout(int index)
@@ -226,12 +215,10 @@ namespace DnDInitiativeTracker.ScreenManager
             });
         }
 
-        IEnumerator SelectAudio(int index, string audioName)
+        async Task SelectAudioAsync(int index, string audioName)
         {
-            yield return dataManager.GetAudioClipFromDataBase(audioName, audioUIData =>
-            {
-                createCharacterPopup.ShowAudioDropdown(index, audioUIData);
-            });
+            var audioUIData = await dataManager.GetAudioClipFromDataBaseAsync(audioName);
+            createCharacterPopup.ShowAudioDropdown(index, audioUIData);
         }
 
         void RemoveNewAudio(int index)
@@ -257,12 +244,10 @@ namespace DnDInitiativeTracker.ScreenManager
 
         #region Edit Character
 
-        IEnumerator CharacterSelected(string characterName)
+        async Task CharacterSelectedAsync(string characterName)
         {
-            yield return dataManager.GetCharacterFromDataBase(characterName, characterUIData =>
-            {
-                editCharacterPopup.UpdateEditCharacter(characterUIData);
-            });
+            var characterUIData = await dataManager.GetCharacterFromDataBaseAsync(characterName);
+            editCharacterPopup.UpdateEditCharacter(characterUIData);
         }
 
         void AddNewAvatarEdit()
@@ -273,12 +258,10 @@ namespace DnDInitiativeTracker.ScreenManager
             });
         }
 
-        IEnumerator SelectAvatarEdit(string avatarName)
+        async Task SelectAvatarEditAsync(string avatarName)
         {
-            yield return dataManager.GetTextureFromDataBase(avatarName, MediaAssetType.Avatar, previewTexture =>
-            {
-                editCharacterPopup.ShowAvatarDropdown(previewTexture);
-            });
+            var previewTexture = await dataManager.GetTextureFromDataBaseAsync(avatarName, MediaAssetType.Avatar);
+            editCharacterPopup.ShowAvatarDropdown(previewTexture);
         }
 
         void RemoveNewAvatarEdit()
@@ -286,12 +269,10 @@ namespace DnDInitiativeTracker.ScreenManager
             editCharacterPopup.ReselectAvatarDropDown();
         }
 
-        IEnumerator AddAudioLayoutEdit()
+        async Task AddAudioLayoutEditAsync()
         {
-            yield return dataManager.GetDefaultAudio(audioUIData =>
-            {
-                editCharacterPopup.AddAudioLayout(audioUIData);
-            });
+            var audioUIData = await dataManager.GetDefaultAudioAsync();
+            editCharacterPopup.AddAudioLayout(audioUIData);
         }
 
         void RemoveAudioLayoutEdit(int index)
@@ -307,12 +288,10 @@ namespace DnDInitiativeTracker.ScreenManager
             });
         }
 
-        IEnumerator SelectAudioEdit(int index, string audioName)
+        async Task SelectAudioEditAsync(int index, string audioName)
         {
-            yield return dataManager.GetAudioClipFromDataBase(audioName, audioUIData =>
-            {
-                editCharacterPopup.ShowAudioDropdown(index, audioUIData);
-            });
+            var audioUIData = await dataManager.GetAudioClipFromDataBaseAsync(audioName);
+            editCharacterPopup.ShowAudioDropdown(index, audioUIData);
         }
 
         void RemoveNewAudioEdit(int index)
@@ -355,12 +334,10 @@ namespace DnDInitiativeTracker.ScreenManager
             });
         }
 
-        IEnumerator SelectBackground(string bgName)
+        async Task SelectBackgroundAsync(string bgName)
         {
-            yield return dataManager.GetTextureFromDataBase(bgName, MediaAssetType.Background, previewTexture =>
-            {
-                changeBGPopup.ShowDropDown(previewTexture);
-            });
+            var previewTexture = await dataManager.GetTextureFromDataBaseAsync(bgName, MediaAssetType.Background);
+            changeBGPopup.ShowDropDown(previewTexture);
         }
 
         void RemoveNewBackground()
@@ -389,12 +366,12 @@ namespace DnDInitiativeTracker.ScreenManager
 
         public void CreateCharacterButtonInspectorHandler()
         {
-            StartCoroutine(ShowCreateCharacterPopup());
+            ShowCreateCharacterPopupAsync();
         }
 
         public void EditCharacterButtonInspectorHandler()
         {
-            StartCoroutine(ShowEditCharacterPopup());
+            ShowEditCharacterPopupAsync();
         }
 
         public void ChangeBGButtonInspectorHandler()
@@ -404,7 +381,7 @@ namespace DnDInitiativeTracker.ScreenManager
 
         public void AddMoreButtonInspectorHandler()
         {
-            StartCoroutine(AddCharacterToEncounter());
+            AddCharacterToEncounterAsync();
         }
 
         public void RefreshButtonInspectorHandler()
@@ -423,7 +400,7 @@ namespace DnDInitiativeTracker.ScreenManager
 
         public void CharacterEncounterSelectedInspectorHandler(int layoutIndex, string characterName)
         {
-            StartCoroutine(CharacterEncounterSelected(layoutIndex, characterName));
+            CharacterEncounterSelectedAsync(layoutIndex, characterName);
         }
 
         public void RemoveCharacterLayoutInspectorHandler(int index)
@@ -442,7 +419,7 @@ namespace DnDInitiativeTracker.ScreenManager
 
         public void AvatarSelectionChangedInspectorHandler(string avatarName)
         {
-            StartCoroutine(SelectAvatar(avatarName));
+            SelectAvatarAsync(avatarName);
         }
 
         public void AvatarRemovedInspectorHandler()
@@ -452,7 +429,7 @@ namespace DnDInitiativeTracker.ScreenManager
 
         public void AddAudioLayoutButtonInspectorHandler()
         {
-            StartCoroutine(AddAudioLayout());
+            AddAudioLayoutAsync();
         }
 
         public void RemoveAudioLayoutButtonInspectorHandler(int index)
@@ -467,7 +444,7 @@ namespace DnDInitiativeTracker.ScreenManager
 
         public void AudioSelectionChangedInspectorHandler(int index, string audioName)
         {
-            StartCoroutine(SelectAudio(index, audioName));
+            SelectAudioAsync(index, audioName);
         }
 
         public void AudioRemovedInspectorHandler(int index)
@@ -491,7 +468,7 @@ namespace DnDInitiativeTracker.ScreenManager
 
         public void CharacterSelectedInspectorHandler(string characterName)
         {
-            StartCoroutine(CharacterSelected(characterName));
+            CharacterSelectedAsync(characterName);
         }
 
         public void AddNewAvatarInspectorHandlerEdit()
@@ -501,7 +478,7 @@ namespace DnDInitiativeTracker.ScreenManager
 
         public void AvatarSelectionChangedInspectorHandlerEdit(string avatarName)
         {
-            StartCoroutine(SelectAvatarEdit(avatarName));
+            SelectAvatarEditAsync(avatarName);
         }
 
         public void AvatarRemovedInspectorHandlerEdit()
@@ -511,7 +488,7 @@ namespace DnDInitiativeTracker.ScreenManager
 
         public void AddAudioLayoutButtonInspectorHandlerEdit()
         {
-            StartCoroutine(AddAudioLayoutEdit());
+            AddAudioLayoutEditAsync();
         }
 
         public void RemoveAudioLayoutButtonInspectorHandlerEdit(int index)
@@ -526,7 +503,7 @@ namespace DnDInitiativeTracker.ScreenManager
 
         public void AudioSelectionChangedInspectorHandlerEdit(int index, string audioName)
         {
-            StartCoroutine(SelectAudioEdit(index, audioName));
+            SelectAudioEditAsync(index, audioName);
         }
 
         public void AudioRemovedInspectorHandlerEdit(int index)
@@ -555,7 +532,7 @@ namespace DnDInitiativeTracker.ScreenManager
 
         public void BackgroundSelectionDropdownInspectorHandler(string bgName)
         {
-            StartCoroutine(SelectBackground(bgName));
+            SelectBackgroundAsync(bgName);
         }
 
         public void RemoveNewBackgroundButtonInspectorHandler()
