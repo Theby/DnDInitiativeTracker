@@ -2,8 +2,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using DnDInitiativeTracker.Controller;
+using DnDInitiativeTracker.Extensions;
 using DnDInitiativeTracker.GameData;
 using DnDInitiativeTracker.UIData;
 using UnityEngine;
@@ -16,7 +18,10 @@ namespace DnDInitiativeTracker.Manager
 
         const int CurrentConfigID = 1;
         const int DefaultCharacterID = 1;
-        const int DefaultAudioID = 2;
+        const int DefaultAvatarID = 1;
+        const int DefaultAudio1ID = 2;
+        const int DefaultAudio2ID = 3;
+        const int DefaultAudio3ID = 4;
 
         public bool IsLoaded { get; private set; }
         public CurrentConfigurationUIData CurrentConfigurationUIData { get; set; } //TODO maybe CanvasManager should have this and request the load
@@ -175,25 +180,24 @@ namespace DnDInitiativeTracker.Manager
             return _sqlController.GetAllMediaTypeNames(MediaAssetType.Background);
         }
 
+        public async Task<TextureUIData> GetDefaultAvatarAsync()
+        {
+            var mediaAsset = _sqlController.GetMediaAsset(DefaultAvatarID);
+            var textureUIData = await GetTextureFromPathAsync(mediaAsset);
+            return textureUIData;
+        }
+
         public void GetTextureFromGallery(MediaAssetType type, Action<TextureUIData> onComplete)
         {
-            NativeGalleryController.GetImagePathFromGallery(path =>
+            NativeBrowserController.GetImagePathFromGallery(path =>
             {
-                var fileName = Path.GetFileNameWithoutExtension(path);
-                var mediaAsset = new MediaAssetData
-                {
-                    Name = fileName,
-                    Path = path,
-                    Type = type,
-                };
-
-                GetTextureFromGalleryCompletionCall(mediaAsset, onComplete);
+                GetTextureFromGalleryCompletionCall(path, type, onComplete);
             });
             return;
 
-            async Task GetTextureFromGalleryCompletionCall(MediaAssetData loadedMedia, Action<TextureUIData> completionCallback)
+            async Task GetTextureFromGalleryCompletionCall(string loadedPath, MediaAssetType loadedType, Action<TextureUIData> completionCallback)
             {
-                var audioUIData = await GetTextureFromPathAsync(loadedMedia);
+                var audioUIData = await GetTextureFromPathAsync(loadedPath, loadedType);
                 completionCallback.Invoke(audioUIData);
             }
         }
@@ -205,13 +209,34 @@ namespace DnDInitiativeTracker.Manager
             return textureUIData;
         }
 
+        public async Task<TextureUIData> GetTextureFromDataBaseAsync(string path)
+        {
+            var mediaAsset = _sqlController.GetMediaAsset(path);
+            var textureUIData = await GetTextureFromPathAsync(mediaAsset);
+            return textureUIData;
+        }
+
+        async Task<TextureUIData> GetTextureFromPathAsync(string path, MediaAssetType type)
+        {
+            var fileName = Path.GetFileNameWithoutExtension(path);
+            var mediaAsset = new MediaAssetData
+            {
+                Name = fileName,
+                Path = path,
+                Type = type,
+            };
+
+            var textureUIData = await GetTextureFromPathAsync(mediaAsset);
+            return textureUIData;
+        }
+
         async Task<TextureUIData> GetTextureFromPathAsync(MediaAssetData mediaAssetData)
         {
             var cacheTexture = GetTextureFromCache(mediaAssetData.Path);
             if (cacheTexture != null)
                 return cacheTexture;
 
-            var texture = await NativeGalleryController.GetImageFromPathAsync(mediaAssetData.Path);
+            var texture = await NativeBrowserController.GetImageFromPathAsync(mediaAssetData.Path);
             if (texture == null)
                 return null;
 
@@ -259,8 +284,14 @@ namespace DnDInitiativeTracker.Manager
                 return;
             }
 
-            NativeGalleryController.SaveImageToGallery(textureUIData.Path, (fullPath, fileName) =>
+            NativeBrowserController.SaveImageToGallery(textureUIData.Path, (fullPath, fileName) =>
             {
+                if (string.IsNullOrEmpty(fullPath))
+                {
+                    onComplete?.Invoke(textureUIData);
+                    return;
+                }
+
                 var oldPath = textureUIData.Path;
                 textureUIData.Name = fileName;
                 textureUIData.Path = fullPath;
@@ -282,6 +313,11 @@ namespace DnDInitiativeTracker.Manager
             return _sqlController.ExistsMediaAsset(mediaAsset.SQLId);
         }
 
+        public bool IsTextureInDatabase(string path)
+        {
+            return _sqlController.ExistsMediaAsset(path);
+        }
+
         #endregion
 
         #region Audio
@@ -293,30 +329,38 @@ namespace DnDInitiativeTracker.Manager
 
         public async Task<AudioUIData> GetDefaultAudioAsync()
         {
-            var mediaAsset = _sqlController.GetMediaAsset(DefaultAudioID);
+            var mediaAsset = _sqlController.GetMediaAsset(DefaultAudio1ID);
             var audioUIData = await GetAudioClipFromPathAsync(mediaAsset);
             return audioUIData;
         }
 
+        public async Task<List<AudioUIData>> GetAllAudioDefaultsAsync()
+        {
+            var defaultAudios = new List<AudioUIData>();
+
+            var defaultIds = new List<int> { DefaultAudio1ID, DefaultAudio2ID, DefaultAudio3ID };
+            foreach (var defaultId in defaultIds)
+            {
+                var mediaAsset = _sqlController.GetMediaAsset(defaultId);
+                var audioUIData = await GetAudioClipFromPathAsync(mediaAsset);
+
+                defaultAudios.Add(audioUIData);
+            }
+
+            return defaultAudios;
+        }
+
         public void GetAudioClipFromGallery(Action<AudioUIData> onComplete)
         {
-            NativeGalleryController.GetAudioPathFromGallery(path =>
+            NativeBrowserController.GetAudioPathFromGallery(path =>
             {
-                var fileName = Path.GetFileNameWithoutExtension(path);
-                var mediaAssetData = new MediaAssetData
-                {
-                    Name = fileName,
-                    Path = path,
-                    Type = MediaAssetType.Audio,
-                };
-                
-                GetAudioClipFromGalleryCompletionCall(mediaAssetData, onComplete);
+                GetAudioClipFromGalleryCompletionCall(path, onComplete);
             });
             return;
 
-            async Task GetAudioClipFromGalleryCompletionCall(MediaAssetData loadedMedia, Action<AudioUIData> completionCallback)
+            async Task GetAudioClipFromGalleryCompletionCall(string path, Action<AudioUIData> completionCallback)
             {
-                var audioUIData = await GetAudioClipFromPathAsync(loadedMedia);
+                var audioUIData = await GetAudioClipFromPathAsync(path);
                 completionCallback.Invoke(audioUIData);
             }
         }
@@ -328,6 +372,27 @@ namespace DnDInitiativeTracker.Manager
             return audioUIData;
         }
 
+        public async Task<AudioUIData> GetAudioClipFromDataBasePathAsync(string path)
+        {
+            var mediaAsset = _sqlController.GetMediaAsset(path);
+            var audioUIData = await GetAudioClipFromPathAsync(mediaAsset);
+            return audioUIData;
+        }
+
+        async Task<AudioUIData> GetAudioClipFromPathAsync(string path)
+        {
+            var fileName = Path.GetFileNameWithoutExtension(path);
+            var mediaAssetData = new MediaAssetData
+            {
+                Name = fileName,
+                Path = path,
+                Type = MediaAssetType.Audio,
+            };
+
+            var audioUIData = await GetAudioClipFromPathAsync(mediaAssetData);
+            return audioUIData;
+        }
+
         async Task<AudioUIData> GetAudioClipFromPathAsync(MediaAssetData mediaAssetData)
         {
             var cachedAudioClip = GetAudioFromCache(mediaAssetData.Path);
@@ -336,7 +401,7 @@ namespace DnDInitiativeTracker.Manager
                 return cachedAudioClip;
             }
 
-            var audioClip = await NativeGalleryController.GetAudioClipFromPathAsync(mediaAssetData.Path);
+            var audioClip = await NativeBrowserController.GetAudioClipFromPathAsync(mediaAssetData.Path);
             if (audioClip == null)
                 return null;
 
@@ -381,8 +446,14 @@ namespace DnDInitiativeTracker.Manager
                 return;
             }
 
-            NativeGalleryController.SaveAudioToGallery(audioUIData.Path, (fullPath, fileName) =>
+            NativeBrowserController.SaveAudioToGallery(audioUIData.Path, (fullPath, fileName) =>
             {
+                if (string.IsNullOrEmpty(fullPath))
+                {
+                    onComplete?.Invoke(audioUIData);
+                    return;
+                }
+
                 var oldPath = audioUIData.Path;
                 audioUIData.Name = fileName;
                 audioUIData.Path = fullPath;
@@ -402,6 +473,11 @@ namespace DnDInitiativeTracker.Manager
         {
             var mediaAsset = audioUIData.ToMediaAssetData();
             return _sqlController.ExistsMediaAsset(mediaAsset.SQLId);
+        }
+
+        public bool IsAudioInDatabase(string path)
+        {
+            return _sqlController.ExistsMediaAsset(path);
         }
 
         #endregion
@@ -442,43 +518,49 @@ namespace DnDInitiativeTracker.Manager
             return characterUIData;
         }
 
-        public IEnumerator CreateCharacter(CharacterUIData characterUIData, Action onComplete)
+        public async Task CreateCharacterAsync(CharacterUIData characterUIData)
         {
-            yield return CreateCharacterAssets(characterUIData);
+            await CreateCharacterAssetsAsync(characterUIData);
 
             var characterData = characterUIData.ToCharacterData();
             _sqlController.AddCharacter(characterData);
-
-            onComplete?.Invoke();
         }
 
-        public IEnumerator UpdateCharacter(CharacterUIData characterUIData, Action onComplete)
+        public async Task UpdateCharacterAsync(CharacterUIData characterUIData)
         {
-            yield return CreateCharacterAssets(characterUIData);
+            await CreateCharacterAssetsAsync(characterUIData);
 
             var characterData = characterUIData.ToCharacterData();
             _sqlController.UpdateCharacter(characterData);
-
-            onComplete?.Invoke();
         }
 
-        IEnumerator CreateCharacterAssets(CharacterUIData characterUIData)
+        async Task CreateCharacterAssetsAsync(CharacterUIData characterUIData)
         {
-            bool textureComplete = false;
-            CreateTexture(characterUIData.Avatar, _ => textureComplete = true);
-            yield return new WaitUntil(() => textureComplete);
-
+            var textureCompletion = new TaskCompletionSource<bool>();
+            CreateTexture(characterUIData.Avatar, _ =>
+            {
+                textureCompletion.SetResult(true);
+            });
+            await textureCompletion.Task;
             foreach (var audioUIData in characterUIData.AudioList)
             {
-                bool audioComplete = false;
-                CreateAudio(audioUIData, _ => audioComplete = true);
-                yield return new WaitUntil(() => audioComplete);
+                var audioCompletion = new TaskCompletionSource<bool>();
+                CreateAudio(audioUIData, _ =>
+                {
+                    audioCompletion.SetResult(true);
+                });
+                await audioCompletion.Task;
             }
         }
 
         public bool IsCharacterInDatabase(CharacterUIData characterUIData)
         {
-            var characterData = _sqlController.GetCharacter(characterUIData.Name);
+            return IsCharacterInDatabase(characterUIData.Name);
+        }
+
+        bool IsCharacterInDatabase(string characterName)
+        {
+            var characterData = _sqlController.GetCharacter(characterName);
             return characterData != null;
         }
 
@@ -509,6 +591,74 @@ namespace DnDInitiativeTracker.Manager
         {
             var configurationData = uiData.ToCurrentConfigurationData();
             _sqlController.UpdateCurrentConfiguration(configurationData);
+        }
+
+        #endregion
+
+        #region File Batch
+
+        public async Task CreateCharactersFromBatch()
+        {
+            var path = await NativeBrowserController.PickFileAsync("txt");
+
+            if (string.IsNullOrEmpty(path))
+                return;
+
+            await CreateCharactersFromFileAsync(path);
+
+            Debug.Log("File batch created successfully!");
+        }
+
+        async Task CreateCharactersFromFileAsync(string path)
+        {
+            try
+            {
+                string fileContent = await NativeBrowserController.ReadFileAsync(path);
+                var characterBatchDataList = JsonUtility.FromJson<CharacterBatchDataList>(fileContent);
+                if (characterBatchDataList == null)
+                    return;
+
+                foreach (var characterBatchData in characterBatchDataList.CharacterList)
+                {
+                    var characterName = characterBatchData.Name;
+                    if (IsCharacterInDatabase(characterName))
+                        continue;
+
+                    var defaultCharacter = await GetDefaultCharacterAsync();
+
+                    // Name
+                    defaultCharacter.Name = characterName;
+
+                    // Avatar
+                    if (!string.IsNullOrEmpty(characterBatchData.AvatarPath))
+                    {
+                        defaultCharacter.Avatar = IsTextureInDatabase(characterBatchData.AvatarPath)
+                            ? await GetTextureFromDataBaseAsync(characterBatchData.AvatarPath)
+                            : await GetTextureFromPathAsync(characterBatchData.AvatarPath, MediaAssetType.Avatar);
+                    }
+
+                    // Audio
+                    var audioList = new List<AudioUIData>();
+                    foreach (var audioPath in characterBatchData.AudioPaths)
+                    {
+                        var audioData = IsAudioInDatabase(audioPath)
+                            ? await GetAudioClipFromDataBasePathAsync(audioPath)
+                            : await GetAudioClipFromPathAsync(audioPath);
+
+                        audioList.Add(audioData);
+                    }
+                    if (audioList.Any())
+                    {
+                        defaultCharacter.AudioList = audioList;
+                    }
+
+                    await CreateCharacterAsync(defaultCharacter);
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
         }
 
         #endregion

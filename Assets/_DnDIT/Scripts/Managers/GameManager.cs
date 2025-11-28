@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using DnDInitiativeTracker.Controller;
 using UnityEngine;
@@ -16,7 +17,7 @@ namespace DnDInitiativeTracker.Manager
 
         async Task Initialize()
         {
-            await NativeGalleryController.RequestPermissionsAsync();
+            await NativeBrowserController.RequestPermissionsAsync();
             await dataManager.InitializeAsync();
 
             canvasManager.Initialize();

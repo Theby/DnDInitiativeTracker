@@ -77,6 +77,16 @@ namespace DnDInitiativeTracker.Controller
             return mediaAsset;
         }
 
+        public MediaAssetData GetMediaAsset(string path)
+        {
+            var sqlData = _sqLiteService.GetBy<MediaAssetSQLData>(m => m.Path == path);
+            if (sqlData == null)
+                return null;
+
+            var mediaAsset = CreateMediaAssetData(sqlData);
+            return mediaAsset;
+        }
+
         MediaAssetData CreateMediaAssetData(MediaAssetSQLData sqlData)
         {
             var name = sqlData.Name;
@@ -98,6 +108,12 @@ namespace DnDInitiativeTracker.Controller
         public bool ExistsMediaAsset(int id)
         {
             var sqlData = _sqLiteService.GetById<MediaAssetSQLData>(id);
+            return sqlData != null;
+        }
+
+        public bool ExistsMediaAsset(string path)
+        {
+            var sqlData = _sqLiteService.GetBy<MediaAssetSQLData>(m => m.Path == path);
             return sqlData != null;
         }
 

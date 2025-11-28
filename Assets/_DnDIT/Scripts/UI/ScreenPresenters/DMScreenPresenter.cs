@@ -6,6 +6,7 @@ using DnDInitiativeTracker.Manager;
 using DnDInitiativeTracker.UI;
 using DnDInitiativeTracker.UIData;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.UI;
 
 namespace DnDInitiativeTracker.ScreenManager
@@ -231,13 +232,15 @@ namespace DnDInitiativeTracker.ScreenManager
             audioSource.PlayOneShot(audioClip);
         }
 
-        void SaveNewCharacter(CharacterUIData newCharacterUIData)
+        async Task SaveNewCharacterAsync(CharacterUIData newCharacterUIData)
         {
             if (string.IsNullOrEmpty(newCharacterUIData.Name) || dataManager.IsCharacterInDatabase(newCharacterUIData))
                 return;
 
             createCharacterPopup.Hide();
-            StartCoroutine(dataManager.CreateCharacter(newCharacterUIData, Refresh));
+            await dataManager.CreateCharacterAsync(newCharacterUIData);
+
+            Refresh();
         }
 
         #endregion
@@ -304,22 +307,15 @@ namespace DnDInitiativeTracker.ScreenManager
             audioSource.PlayOneShot(audioClip);
         }
 
-        void SaveNewCharacterEdit(CharacterUIData newCharacterUIData)
-        {
-            if (string.IsNullOrEmpty(newCharacterUIData.Name) || dataManager.IsCharacterInDatabase(newCharacterUIData))
-                return;
-
-            editCharacterPopup.Hide();
-            StartCoroutine(dataManager.CreateCharacter(newCharacterUIData, Refresh));
-        }
-
-        void UpdateCharacter(CharacterUIData characterUIData)
+        async Task UpdateCharacterAsync(CharacterUIData characterUIData)
         {
             if (string.IsNullOrEmpty(characterUIData.Name))
                 return;
 
             editCharacterPopup.Hide();
-            StartCoroutine(dataManager.UpdateCharacter(characterUIData, Refresh));
+            await dataManager.UpdateCharacterAsync(characterUIData);
+
+            Refresh();
         }
 
         #endregion
@@ -362,6 +358,17 @@ namespace DnDInitiativeTracker.ScreenManager
 
         #endregion
 
+        #region Batch Loading
+
+        async Task AddFromTextBatch()
+        {
+            await dataManager.CreateCharactersFromBatch();
+
+            Refresh();
+        }
+
+        #endregion
+
         #region Main Inspector Handlers
 
         public void CreateCharacterButtonInspectorHandler()
@@ -377,6 +384,11 @@ namespace DnDInitiativeTracker.ScreenManager
         public void ChangeBGButtonInspectorHandler()
         {
             ShowChangeBGPopup();
+        }
+
+        public void AddTextBatchButtonInspectorHandler()
+        {
+            AddFromTextBatch();
         }
 
         public void AddMoreButtonInspectorHandler()
@@ -459,7 +471,7 @@ namespace DnDInitiativeTracker.ScreenManager
 
         public void SaveNewCharacterButtonInspectorHandler(CharacterUIData newCharacterUIData)
         {
-            SaveNewCharacter(newCharacterUIData);
+            SaveNewCharacterAsync(newCharacterUIData);
         }
 
         #endregion
@@ -518,7 +530,7 @@ namespace DnDInitiativeTracker.ScreenManager
 
         public void UpdateCharacterButtonInspectorHandler(CharacterUIData characterUIData)
         {
-            UpdateCharacter(characterUIData);
+            UpdateCharacterAsync(characterUIData);
         }
 
         #endregion

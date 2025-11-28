@@ -2,13 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using DnDInitiativeTracker.Extensions;
 using DnDInitiativeTracker.Manager;
 using UnityEngine;
 using UnityEngine.Networking;
 
 namespace DnDInitiativeTracker.Controller
 {
-    public static class NativeGalleryController
+    public static class NativeBrowserController
     {
         const string AlbumName = "DnDIT";
 
@@ -33,10 +34,27 @@ namespace DnDInitiativeTracker.Controller
         {
             try
             {
-                await NativeGallery.RequestPermissionAsync(NativeGallery.PermissionType.Read,
+                bool hasImageReadPermission = NativeGallery.CheckPermission(NativeGallery.PermissionType.Read,
                     NativeGallery.MediaType.Image | NativeGallery.MediaType.Audio);
-                await NativeGallery.RequestPermissionAsync(NativeGallery.PermissionType.Write,
+                if(!hasImageReadPermission)
+                {
+                    await NativeGallery.RequestPermissionAsync(NativeGallery.PermissionType.Read,
                     NativeGallery.MediaType.Image | NativeGallery.MediaType.Audio);
+                }
+
+                bool hasImageWritePermissions = NativeGallery.CheckPermission(NativeGallery.PermissionType.Write,
+                    NativeGallery.MediaType.Image | NativeGallery.MediaType.Audio);
+                if (!hasImageWritePermissions)
+                {
+                    await NativeGallery.RequestPermissionAsync(NativeGallery.PermissionType.Write,
+                        NativeGallery.MediaType.Image | NativeGallery.MediaType.Audio);
+                }
+
+                bool hasFileReadPermission = NativeFilePicker.CheckPermission(true);
+                if (!hasFileReadPermission)
+                {
+                    await NativeFilePicker.RequestPermissionAsync(true);
+                }
             }
             catch (Exception e)
             {
@@ -233,6 +251,52 @@ namespace DnDInitiativeTracker.Controller
                 onComplete?.Invoke(string.Empty, string.Empty);
                 Debug.LogError(e.Message);
             }
+        }
+
+        public static async Task<string> PickFileAsync(string fileExtension)
+        {
+            string path;
+
+            try
+            {
+                string fileType = NativeFilePicker.ConvertExtensionToFileType(fileExtension);
+                path = await TaskAsyncExtensions.MakeAsync<string>(tsc =>
+                {
+                    NativeFilePicker.PickFile(tsc.Invoke, fileType);
+                });
+            }
+            catch (Exception e)
+            {
+                path = string.Empty;
+                Debug.LogError(e.Message);
+            }
+
+            return path;
+        }
+
+        public static async Task<string> ReadFileAsync(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return string.Empty;
+
+            string fileContent;
+
+            try
+            {
+                using var www = UnityWebRequest.Get(path);
+                await www.SendWebRequest();
+
+                fileContent = www.result is not UnityWebRequest.Result.Success
+                    ? string.Empty
+                    : www.downloadHandler.text;
+            }
+            catch (Exception e)
+            {
+                fileContent = null;
+                Debug.LogError(e.Message);
+            }
+
+            return fileContent;
         }
     }
 }

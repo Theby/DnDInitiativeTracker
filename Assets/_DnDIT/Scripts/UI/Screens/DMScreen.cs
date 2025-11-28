@@ -19,6 +19,7 @@ namespace DnDInitiativeTracker.UI
         [SerializeField] Button createCharacterButton;
         [SerializeField] Button editCharacterButton;
         [SerializeField] Button changeBGButton;
+        [SerializeField] Button addTextBatchButton;
         [SerializeField] Button backButton;
         [Header("Events")]
         [SerializeField] UnityEvent onAddMore;
@@ -28,6 +29,7 @@ namespace DnDInitiativeTracker.UI
         [SerializeField] UnityEvent onCreateCharacter;
         [SerializeField] UnityEvent onEditCharacter;
         [SerializeField] UnityEvent onChangeBG;
+        [SerializeField] UnityEvent onAddTextBatchButton;
         [SerializeField] UnityEvent onBack;
 
         DMScreenData _data;
@@ -40,6 +42,7 @@ namespace DnDInitiativeTracker.UI
             createCharacterButton.onClick.AddListener(onCreateCharacter.Invoke);
             editCharacterButton.onClick.AddListener(onEditCharacter.Invoke);
             changeBGButton.onClick.AddListener(onChangeBG.Invoke);
+            addTextBatchButton.onClick.AddListener(onAddTextBatchButton.Invoke);
             backButton.onClick.AddListener(onBack.Invoke);
         }
 
