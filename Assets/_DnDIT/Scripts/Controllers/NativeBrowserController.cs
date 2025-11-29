@@ -62,20 +62,13 @@ namespace DnDInitiativeTracker.Controller
             }
         }
 
-        public static void GetImagePathFromGallery(Action<string> onComplete)
+        public static async Task<string> GetImagePathFromGallery()
         {
-            try
-            {
-                NativeGallery.GetImageFromGallery(onComplete.Invoke);
-            }
-            catch (Exception e)
-            {
-                onComplete?.Invoke(string.Empty);
-                Debug.LogError(e.Message);
-            }
+            var path = await GetMediaAssetPathFromGallery(NativeGallery.GetImageFromGallery, "", "image/*");
+            return path;
         }
 
-        public static async Task<Texture2D> GetImageFromPathAsync(string path)
+        public static async Task<Texture2D> GetTexture2DFromPathAsync(string path)
         {
             if (string.IsNullOrEmpty(path))
                 return null;
@@ -84,8 +77,10 @@ namespace DnDInitiativeTracker.Controller
 
             try
             {
-                texture = IsStreamingAssetsPath(path)
-                    ? await LoadImageFromStreamingAssetsAsync(path)
+                texture = path.StartsWith(DataManager.StreamingAssetTag)
+                    ? await GetMediaAssetFromPathAsync(path,
+                        uri => UnityWebRequestTexture.GetTexture(uri, false),
+                        DownloadHandlerTexture.GetContent)
                     : await NativeGallery.LoadImageAtPathAsync(path);
             }
             catch (Exception e)
@@ -94,124 +89,27 @@ namespace DnDInitiativeTracker.Controller
                 Debug.LogError(e.Message);
             }
 
-            if (texture == null)
-                return null;
-
-            var fileName = Path.GetFileNameWithoutExtension(path);
-            texture.name = fileName;
-
             return texture;
         }
 
-        static bool IsStreamingAssetsPath(string path)
+        public static async Task<(string, string)> SaveImageToGallery(string path)
         {
-            return path.StartsWith(DataManager.StreamingAssetTag);
+            var pathFileNameTuple = await SaveMediaAssetToGallery(path, NativeGallery.SaveImageToGallery);
+            return pathFileNameTuple;
         }
 
-        static async Task<Texture2D> LoadImageFromStreamingAssetsAsync(string path, bool markTextureNonReadable = false)
+        public static async Task<string> GetAudioPathFromGallery()
         {
-            if (string.IsNullOrEmpty(path))
-                return null;
-
-            Texture2D texture2D;
-
-            try
-            {
-                path = path.Replace(DataManager.StreamingAssetTag, "");
-                var fullPath = Path.Combine(Application.streamingAssetsPath, path);
-                var uri = new Uri(fullPath);
-
-                using var www = UnityWebRequestTexture.GetTexture(uri, markTextureNonReadable);
-                await www.SendWebRequest();
-
-                texture2D = www.result is not UnityWebRequest.Result.Success
-                    ? null
-                    : DownloadHandlerTexture.GetContent(www);
-            }
-            catch (Exception e)
-            {
-                texture2D = null;
-                Debug.LogError(e.Message);
-            }
-
-            return texture2D;
-        }
-
-        public static void SaveImageToGallery(string path, Action<string, string> onComplete = null)
-        {
-            if (string.IsNullOrEmpty(path))
-            {
-                onComplete?.Invoke(string.Empty, string.Empty);
-                return;
-            }
-
-            try
-            {
-                var fullPath = path;
-                var currentFileName = Path.GetFileNameWithoutExtension(path);
-
-                NativeGallery.SaveImageToGallery(fullPath, AlbumName, currentFileName, (success, savePath) =>
-                {
-#if UNITY_EDITOR
-                    onComplete?.Invoke(fullPath, currentFileName);
-#else
-                    var newFileName = Path.GetFileNameWithoutExtension(savePath);
-                    onComplete?.Invoke(savePath, newFileName);
-#endif
-                });
-            }
-            catch (Exception e)
-            {
-                onComplete?.Invoke(string.Empty, string.Empty);
-                Debug.LogError(e.Message);
-            }
-        }
-
-        public static void GetAudioPathFromGallery(Action<string> onComplete)
-        {
-            try
-            {
-                NativeGallery.GetAudioFromGallery(onComplete.Invoke);
-            }
-            catch (Exception e)
-            {
-                onComplete?.Invoke(string.Empty);
-                Debug.LogError(e.Message);
-            }
+            var path = await GetMediaAssetPathFromGallery(NativeGallery.GetAudioFromGallery, "", "audio/*");
+            return path;
         }
 
         public static async Task<AudioClip> GetAudioClipFromPathAsync(string path)
         {
-            if (string.IsNullOrEmpty(path))
-                return null;
-
-            AudioClip audioClip;
-
-            try
-            {
-                path = path.Replace(DataManager.StreamingAssetTag, "");
-                var fullPath = Path.Combine(Application.streamingAssetsPath, path);
-                var uri = new Uri(fullPath);
-                var audioType = GetAudioType(path);
-
-                using var www = UnityWebRequestMultimedia.GetAudioClip(uri, audioType);
-                await www.SendWebRequest();
-
-                audioClip = www.result is not UnityWebRequest.Result.Success
-                    ? null
-                    : DownloadHandlerAudioClip.GetContent(www);
-
-                if (audioClip != null)
-                {
-                    audioClip.name = Path.GetFileNameWithoutExtension(path);
-                }
-            }
-            catch (Exception e)
-            {
-                audioClip = null;
-                Debug.LogError(e.Message);
-            }
-
+            var audioType = GetAudioType(path);
+            var audioClip = await GetMediaAssetFromPathAsync(path,
+                uri => UnityWebRequestMultimedia.GetAudioClip(uri, audioType),
+                DownloadHandlerAudioClip.GetContent);
             return audioClip;
         }
 
@@ -223,34 +121,94 @@ namespace DnDInitiativeTracker.Controller
                 : AudioTypeMap.GetValueOrDefault(extension, AudioType.UNKNOWN);
         }
 
-        public static void SaveAudioToGallery(string path, Action<string, string> onComplete = null)
+        public static async Task<(string, string)> SaveAudioToGallery(string path)
+        {
+            var pathFileNameTuple = await SaveMediaAssetToGallery(path, NativeGallery.SaveAudioToGallery);
+            return pathFileNameTuple;
+        }
+
+        static async Task<T> GetMediaAssetFromPathAsync<T>(string path, Func<Uri, UnityWebRequest> webRequestHandler, Func<UnityWebRequest, T> getContentHandler)
         {
             if (string.IsNullOrEmpty(path))
-            {
-                onComplete?.Invoke(string.Empty, string.Empty);
-                return;
-            }
+                return default(T);
+
+            T mediaAsset;
 
             try
             {
-                var fullPath = path;
-                var currentFileName = Path.GetFileNameWithoutExtension(path);
-                
-                NativeGallery.SaveAudioToGallery(fullPath, AlbumName, currentFileName, (success, savePath) =>
+                path = path.Replace(DataManager.StreamingAssetTag, "");
+                var fullPath = Path.Combine(Application.streamingAssetsPath, path);
+                var uri = new Uri(fullPath);
+
+                using var www = webRequestHandler.Invoke(uri);
+                await www.SendWebRequest();
+
+                mediaAsset = www.result is not UnityWebRequest.Result.Success
+                    ? default(T)
+                    : getContentHandler.Invoke(www);
+            }
+            catch (Exception e)
+            {
+                mediaAsset = default(T);
+                Debug.LogError(e.Message);
+            }
+
+            return mediaAsset;
+        }
+
+        static async Task<string> GetMediaAssetPathFromGallery(Action<NativeGallery.MediaPickCallback, string, string> getPathHandler, string title, string mime)
+        {
+            string path;
+
+            try
+            {
+                path = await TaskAsyncExtensions.MakeAsync<string>(tsc =>
                 {
-#if UNITY_EDITOR
-                    onComplete?.Invoke(fullPath, currentFileName);
-#else
-                    var newFileName = Path.GetFileNameWithoutExtension(savePath);
-                    onComplete?.Invoke(savePath, newFileName);
-#endif
+                    getPathHandler.Invoke(tsc.Invoke, title, mime);
                 });
             }
             catch (Exception e)
             {
-                onComplete?.Invoke(string.Empty, string.Empty);
+                path = string.Empty;
                 Debug.LogError(e.Message);
             }
+
+            return path;
+        }
+
+        static async Task<(string, string)> SaveMediaAssetToGallery(string path, Action<string, string, string, NativeGallery.MediaSaveCallback> saveToGalleryHandler)
+        {
+            if (string.IsNullOrEmpty(path))
+                return (string.Empty, string.Empty);
+
+            string fullPath;
+            string currentFileName;
+            try
+            {
+                fullPath = path;
+                currentFileName = Path.GetFileNameWithoutExtension(path);
+                (bool success, string savePath) = await TaskAsyncExtensions.MakeAsync<(bool, string)>(tsc =>
+                {
+                    saveToGalleryHandler.Invoke(fullPath, AlbumName, currentFileName,
+                        (success, savePath) => tsc.Invoke((success, savePath)));
+                });
+
+#if UNITY_EDITOR
+                fullPath = success ? fullPath : string.Empty;
+                currentFileName = success ? currentFileName : string.Empty;
+#else
+                fullPath = success ? savePath : string.Empty;
+                currentFileName = success ? Path.GetFileNameWithoutExtension(savePath) : string.Empty;
+#endif
+            }
+            catch (Exception e)
+            {
+                fullPath = string.Empty;
+                currentFileName = string.Empty;
+                Debug.LogError(e.Message);
+            }
+
+            return (fullPath, currentFileName);
         }
 
         public static async Task<string> PickFileAsync(string fileExtension)

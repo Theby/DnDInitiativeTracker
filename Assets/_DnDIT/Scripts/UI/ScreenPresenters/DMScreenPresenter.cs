@@ -49,20 +49,34 @@ namespace DnDInitiativeTracker.ScreenManager
             dmScreen.Show();
         }
 
-        async Task ShowCreateCharacterPopupAsync()
+        async void ShowCreateCharacterPopupAsync()
         {
-            var defaultCharacter = await dataManager.GetDefaultCharacterAsync();
+            try
+            {
+                var defaultCharacter = await dataManager.GetDefaultCharacterAsync();
 
-            createCharacterPopup.SetData(_data, defaultCharacter);
-            createCharacterPopup.Show();
+                createCharacterPopup.SetData(_data, defaultCharacter);
+                createCharacterPopup.Show();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
         }
 
-        async Task ShowEditCharacterPopupAsync()
+        async void ShowEditCharacterPopupAsync()
         {
-            var defaultCharacter = await dataManager.GetDefaultCharacterAsync();
+            try
+            {
+                var defaultCharacter = await dataManager.GetDefaultCharacterAsync();
 
-            editCharacterPopup.SetData(_data, defaultCharacter);
-            editCharacterPopup.Show();
+                editCharacterPopup.SetData(_data, defaultCharacter);
+                editCharacterPopup.Show();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
         }
 
         void ShowChangeBGPopup()
@@ -139,10 +153,17 @@ namespace DnDInitiativeTracker.ScreenManager
 
         #region Encounter
 
-        async Task AddCharacterToEncounterAsync()
+        async void AddCharacterToEncounterAsync()
         {
-            var defaultCharacter = await dataManager.GetDefaultCharacterAsync();
-            dmScreen.AddCharacterInitiativeLayout(defaultCharacter, 0);
+            try
+            {
+                var defaultCharacter = await dataManager.GetDefaultCharacterAsync();
+                dmScreen.AddCharacterInitiativeLayout(defaultCharacter, 0);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
         }
 
         void RemoveCharacterFromEncounter(int positionIndex)
@@ -150,10 +171,17 @@ namespace DnDInitiativeTracker.ScreenManager
             dmScreen.RemoveCharacterInitiativeLayout(positionIndex);
         }
 
-        async Task CharacterEncounterSelectedAsync(int layoutIndex, string characterName)
+        async void CharacterEncounterSelectedAsync(int layoutIndex, string characterName)
         {
-            var characterUIData = await dataManager.GetCharacterFromDataBaseAsync(characterName);
-            dmScreen.UpdateCharacter(layoutIndex, characterUIData);
+            try
+            {
+                var characterUIData = await dataManager.GetCharacterFromDataBaseAsync(characterName);
+                dmScreen.UpdateCharacter(layoutIndex, characterUIData);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
         }
 
         void RefreshEncounterOrder()
@@ -178,18 +206,30 @@ namespace DnDInitiativeTracker.ScreenManager
 
         #region Create Character
 
-        void AddNewAvatar()
+        async void AddNewAvatar()
         {
-            dataManager.GetTextureFromGallery(MediaAssetType.Avatar, textureUIData =>
+            try
             {
+                var textureUIData = await dataManager.GetTextureFromGallery(MediaAssetType.Avatar);
                 createCharacterPopup.ShowNewAvatar(textureUIData);
-            });
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
         }
 
-        async Task SelectAvatarAsync(string avatarName)
+        async void SelectAvatarAsync(string avatarName)
         {
-            var previewTexture = await dataManager.GetTextureFromDataBaseAsync(avatarName, MediaAssetType.Avatar);
-            createCharacterPopup.ShowAvatarDropdown(previewTexture);
+            try
+            {
+                var previewTexture = await dataManager.GetTextureFromDataBaseAsync(avatarName, MediaAssetType.Avatar);
+                createCharacterPopup.ShowAvatarDropdown(previewTexture);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
         }
 
         void RemoveNewAvatar()
@@ -197,10 +237,17 @@ namespace DnDInitiativeTracker.ScreenManager
             createCharacterPopup.ReselectAvatarDropDown();
         }
 
-        async Task AddAudioLayoutAsync()
+        async void AddAudioLayoutAsync()
         {
-            var audioUIData = await dataManager.GetDefaultAudioAsync();
-            createCharacterPopup.AddAudioLayout(audioUIData);
+            try
+            {
+                var audioUIData = await dataManager.GetDefaultAudioAsync();
+                createCharacterPopup.AddAudioLayout(audioUIData);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
         }
 
         void RemoveAudioLayout(int index)
@@ -208,18 +255,30 @@ namespace DnDInitiativeTracker.ScreenManager
             createCharacterPopup.RemoveAudioLayout(index);
         }
 
-        void AddNewAudio(int index)
+        async void AddNewAudio(int index)
         {
-            dataManager.GetAudioClipFromGallery(audioUIData =>
+            try
             {
+                var audioUIData = await dataManager.GetAudioClipFromGallery();
                 createCharacterPopup.ShowNewAudio(index, audioUIData);
-            });
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
         }
 
-        async Task SelectAudioAsync(int index, string audioName)
+        async void SelectAudioAsync(int index, string audioName)
         {
-            var audioUIData = await dataManager.GetAudioClipFromDataBaseAsync(audioName);
-            createCharacterPopup.ShowAudioDropdown(index, audioUIData);
+            try
+            {
+                var audioUIData = await dataManager.GetAudioClipFromDataBaseAsync(audioName);
+                createCharacterPopup.ShowAudioDropdown(index, audioUIData);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
         }
 
         void RemoveNewAudio(int index)
@@ -232,39 +291,65 @@ namespace DnDInitiativeTracker.ScreenManager
             audioSource.PlayOneShot(audioClip);
         }
 
-        async Task SaveNewCharacterAsync(CharacterUIData newCharacterUIData)
+        async void SaveNewCharacterAsync(CharacterUIData newCharacterUIData)
         {
-            if (string.IsNullOrEmpty(newCharacterUIData.Name) || dataManager.IsCharacterInDatabase(newCharacterUIData))
-                return;
+            try
+            {
+                if (string.IsNullOrEmpty(newCharacterUIData.Name) || dataManager.IsCharacterInDatabase(newCharacterUIData))
+                    return;
 
-            createCharacterPopup.Hide();
-            await dataManager.CreateCharacterAsync(newCharacterUIData);
+                createCharacterPopup.Hide();
+                await dataManager.CreateCharacterAsync(newCharacterUIData);
 
-            Refresh();
+                Refresh();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
         }
 
         #endregion
 
         #region Edit Character
 
-        async Task CharacterSelectedAsync(string characterName)
+        async void CharacterSelectedAsync(string characterName)
         {
-            var characterUIData = await dataManager.GetCharacterFromDataBaseAsync(characterName);
-            editCharacterPopup.UpdateEditCharacter(characterUIData);
-        }
-
-        void AddNewAvatarEdit()
-        {
-            dataManager.GetTextureFromGallery(MediaAssetType.Avatar, textureUIData =>
+            try
             {
-                editCharacterPopup.ShowNewAvatar(textureUIData);
-            });
+                var characterUIData = await dataManager.GetCharacterFromDataBaseAsync(characterName);
+                editCharacterPopup.UpdateEditCharacter(characterUIData);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
         }
 
-        async Task SelectAvatarEditAsync(string avatarName)
+        async void AddNewAvatarEdit()
         {
-            var previewTexture = await dataManager.GetTextureFromDataBaseAsync(avatarName, MediaAssetType.Avatar);
-            editCharacterPopup.ShowAvatarDropdown(previewTexture);
+            try
+            {
+                var textureUIData = await dataManager.GetTextureFromGallery(MediaAssetType.Avatar);
+                editCharacterPopup.ShowNewAvatar(textureUIData);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
+        }
+
+        async void SelectAvatarEditAsync(string avatarName)
+        {
+            try
+            {
+                var previewTexture = await dataManager.GetTextureFromDataBaseAsync(avatarName, MediaAssetType.Avatar);
+                editCharacterPopup.ShowAvatarDropdown(previewTexture);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
         }
 
         void RemoveNewAvatarEdit()
@@ -272,10 +357,17 @@ namespace DnDInitiativeTracker.ScreenManager
             editCharacterPopup.ReselectAvatarDropDown();
         }
 
-        async Task AddAudioLayoutEditAsync()
+        async void AddAudioLayoutEditAsync()
         {
-            var audioUIData = await dataManager.GetDefaultAudioAsync();
-            editCharacterPopup.AddAudioLayout(audioUIData);
+            try
+            {
+                var audioUIData = await dataManager.GetDefaultAudioAsync();
+                editCharacterPopup.AddAudioLayout(audioUIData);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
         }
 
         void RemoveAudioLayoutEdit(int index)
@@ -283,18 +375,30 @@ namespace DnDInitiativeTracker.ScreenManager
             editCharacterPopup.RemoveAudioLayout(index);
         }
 
-        void AddNewAudioEdit(int index)
+        async void AddNewAudioEdit(int index)
         {
-            dataManager.GetAudioClipFromGallery(audioUIData =>
+            try
             {
+                var audioUIData = await dataManager.GetAudioClipFromGallery();
                 editCharacterPopup.ShowNewAudio(index, audioUIData);
-            });
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
         }
 
-        async Task SelectAudioEditAsync(int index, string audioName)
+        async void SelectAudioEditAsync(int index, string audioName)
         {
-            var audioUIData = await dataManager.GetAudioClipFromDataBaseAsync(audioName);
-            editCharacterPopup.ShowAudioDropdown(index, audioUIData);
+            try
+            {
+                var audioUIData = await dataManager.GetAudioClipFromDataBaseAsync(audioName);
+                editCharacterPopup.ShowAudioDropdown(index, audioUIData);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
         }
 
         void RemoveNewAudioEdit(int index)
@@ -307,33 +411,52 @@ namespace DnDInitiativeTracker.ScreenManager
             audioSource.PlayOneShot(audioClip);
         }
 
-        async Task UpdateCharacterAsync(CharacterUIData characterUIData)
+        async void UpdateCharacterAsync(CharacterUIData characterUIData)
         {
-            if (string.IsNullOrEmpty(characterUIData.Name))
-                return;
+            try
+            {
+                if (string.IsNullOrEmpty(characterUIData.Name))
+                    return;
 
-            editCharacterPopup.Hide();
-            await dataManager.UpdateCharacterAsync(characterUIData);
+                editCharacterPopup.Hide();
+                await dataManager.UpdateCharacterAsync(characterUIData);
 
-            Refresh();
+                Refresh();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
         }
 
         #endregion
 
         #region Change Background
 
-        void AddNewBackground()
+        async void AddNewBackground()
         {
-            dataManager.GetTextureFromGallery(MediaAssetType.Background, textureUIData =>
+            try
             {
-               changeBGPopup.ShowNewBackground(textureUIData);
-            });
+                var textureUIData = await dataManager.GetTextureFromGallery(MediaAssetType.Background);
+                changeBGPopup.ShowNewBackground(textureUIData);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
         }
 
-        async Task SelectBackgroundAsync(string bgName)
+        async void SelectBackgroundAsync(string bgName)
         {
-            var previewTexture = await dataManager.GetTextureFromDataBaseAsync(bgName, MediaAssetType.Background);
-            changeBGPopup.ShowDropDown(previewTexture);
+            try
+            {
+                var previewTexture = await dataManager.GetTextureFromDataBaseAsync(bgName, MediaAssetType.Background);
+                changeBGPopup.ShowDropDown(previewTexture);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
         }
 
         void RemoveNewBackground()
@@ -341,11 +464,19 @@ namespace DnDInitiativeTracker.ScreenManager
             changeBGPopup.ReselectBackgroundDropDown();
         }
 
-        void ApplyBackground(TextureUIData backgroundUIData)
+        async void ApplyBackground(TextureUIData backgroundUIData)
         {
-            changeBGPopup.Hide();
+            try
+            {
+                changeBGPopup.Hide();
 
-            dataManager.CreateTexture(backgroundUIData, UpdateCurrentConfigurationBackground);
+                var textureUIData = await dataManager.CreateTexture(backgroundUIData);
+                UpdateCurrentConfigurationBackground(textureUIData);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
         }
 
         void UpdateCurrentConfigurationBackground(TextureUIData backgroundUIData)
@@ -360,11 +491,18 @@ namespace DnDInitiativeTracker.ScreenManager
 
         #region Batch Loading
 
-        async Task AddFromTextBatch()
+        async void AddFromTextBatch()
         {
-            await dataManager.CreateCharactersFromBatch();
+            try
+            {
+                await dataManager.CreateCharactersFromBatch();
 
-            Refresh();
+                Refresh();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
         }
 
         #endregion

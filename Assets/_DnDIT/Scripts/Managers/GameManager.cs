@@ -1,5 +1,4 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using System;
 using DnDInitiativeTracker.Controller;
 using UnityEngine;
 
@@ -15,14 +14,21 @@ namespace DnDInitiativeTracker.Manager
             Initialize();
         }
 
-        async Task Initialize()
+        async void Initialize()
         {
-            await NativeBrowserController.RequestPermissionsAsync();
-            await dataManager.InitializeAsync();
+            try
+            {
+                await NativeBrowserController.RequestPermissionsAsync();
+                await dataManager.InitializeAsync();
 
-            canvasManager.Initialize();
+                canvasManager.Initialize();
 
-            canvasManager.ShowPlayersScreen();
+                canvasManager.ShowPlayersScreen();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
         }
     }
 }

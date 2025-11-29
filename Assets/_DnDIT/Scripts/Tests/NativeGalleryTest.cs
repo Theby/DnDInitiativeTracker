@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Threading.Tasks;
 using TMPro;
@@ -21,17 +22,24 @@ namespace DnDInitiativeTracker.Test
             RequestPermissions();
         }
 
-        async Task RequestPermissions()
+        async void RequestPermissions()
         {
-            await Task.Delay(2000);
+            try
+            {
+                await Task.Delay(2000);
 
-            Task readTask = NativeGallery.RequestPermissionAsync(NativeGallery.PermissionType.Read,
-                NativeGallery.MediaType.Image | NativeGallery.MediaType.Audio);
-            Task writeTask = NativeGallery.RequestPermissionAsync(NativeGallery.PermissionType.Write,
-                NativeGallery.MediaType.Image | NativeGallery.MediaType.Audio);
+                Task readTask = NativeGallery.RequestPermissionAsync(NativeGallery.PermissionType.Read,
+                    NativeGallery.MediaType.Image | NativeGallery.MediaType.Audio);
+                Task writeTask = NativeGallery.RequestPermissionAsync(NativeGallery.PermissionType.Write,
+                    NativeGallery.MediaType.Image | NativeGallery.MediaType.Audio);
 
-            await readTask;
-            await writeTask;
+                await readTask;
+                await writeTask;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
         }
 
         public void OnImagePressed()
